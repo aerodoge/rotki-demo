@@ -1,0 +1,39 @@
+server:
+  port: 8080
+  mode: debug # debug, release
+
+database:
+  host: localhost
+  port: 3306
+  username: root
+  password: ""
+  database: rotki_demo
+  charset: utf8mb4
+  max_idle_conns: 10
+  max_open_conns: 100
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  cache_ttl: 300 # seconds
+
+debank:
+  api_key: "YOUR_DEBANK_API_KEY_HERE"
+  base_url: "https://pro-openapi.debank.com"
+  rate_limit:
+    requests_per_second: 5
+    burst: 10
+  cache_ttl: 60 # seconds
+  timeout: 30 # seconds
+
+sync:
+  enabled: true
+  interval: 300 # seconds, how often to sync all addresses
+  batch_size: 10 # how many addresses to sync concurrently
+
+log:
+  level: debug # debug, info, warn, error
+  output: stdout # stdout, file
+  file_path: logs/app.log

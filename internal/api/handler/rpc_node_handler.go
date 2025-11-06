@@ -1,0 +1,246 @@
+package handler
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/miles/rotki-demo/internal/models"
+	"github.com/miles/rotki-demo/internal/service"
+	"go.uber.org/zap"
+)
+
+// RPCNodeHandler handles RPC node-related HTTP requests
+type RPCNodeHandler struct {
+	service *service.RPCNodeService
+	logger  *zap.Logger
+}
+
+// NewRPCNodeHandler creates a new RPC node handler
+func NewRPCNodeHandler(service *service.RPCNodeService, logger *zap.Logger) *RPCNodeHandler {
+	return &RPCNodeHandler{
+		service: service,
+		logger:  logger,
+	}
+}
+
+// CreateRPCNode handles creating a new RPC node
+// @Summary Create RPC node
+// @Tags rpc-nodes
+// @Accept json
+// @Produce json
+// @Param node body models.RPCNode true "RPC node data"
+// @Success 201 {object} models.RPCNode
+// @Router /api/v1/rpc-nodes [post]
+func (h *RPCNodeHandler) CreateRPCNode(c *gin.Context) {
+	var req models.RPCNode
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Invalid request body", zap.Error(err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Set defaults if not provided
+	if req.Timeout == 0 {
+		req.Timeout = 30
+	}
+	if req.Weight == 0 {
+		req.Weight = 100
+	}
+
+	if err := h.service.Create(c.Request.Context(), &req); err != nil {
+		h.logger.Error("Failed to create RPC node", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create RPC node"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, req)
+}
+
+// GetRPCNode handles retrieving a single RPC node
+// @Summary Get RPC node by ID
+// @Tags rpc-nodes
+// @Produce json
+// @Param id path int true "RPC node ID"
+// @Success 200 {object} models.RPCNode
+// @Router /api/v1/rpc-nodes/{id} [get]
+func (h *RPCNodeHandler) GetRPCNode(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	node, err := h.service.GetByID(c.Request.Context(), uint(id))
+	if err != nil {
+		h.logger.Error("Failed to get RPC node", zap.Error(err))
+		c.JSON(http.StatusNotFound, gin.H{"error": "RPC node not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, node)
+}
+
+// ListRPCNodes handles retrieving all RPC nodes
+// @Summary List all RPC nodes
+// @Tags rpc-nodes
+// @Produce json
+// @Param chain_id query string false "Filter by chain ID"
+// @Success 200 {array} models.RPCNode
+// @Router /api/v1/rpc-nodes [get]
+func (h *RPCNodeHandler) ListRPCNodes(c *gin.Context) {
+	chainID := c.Query("chain_id")
+
+	var nodes []models.RPCNode
+	var err error
+
+	if chainID != "" {
+		nodes, err = h.service.GetByChainID(c.Request.Context(), chainID)
+	} else {
+		nodes, err = h.service.GetAll(c.Request.Context())
+	}
+
+	if err != nil {
+		h.logger.Error("Failed to list RPC nodes", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve RPC nodes"})
+		return
+	}
+
+	c.JSON(http.StatusOK, nodes)
+}
+
+// GetRPCNodesByChain handles retrieving RPC nodes grouped by chain
+// @Summary Get RPC nodes grouped by chain
+// @Tags rpc-nodes
+// @Produce json
+// @Success 200 {object} map[string][]models.RPCNode
+// @Router /api/v1/rpc-nodes/grouped [get]
+func (h *RPCNodeHandler) GetRPCNodesByChain(c *gin.Context) {
+	grouped, err := h.service.GetGroupedByChain(c.Request.Context())
+	if err != nil {
+		h.logger.Error("Failed to get grouped RPC nodes", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve RPC nodes"})
+		return
+	}
+
+	c.JSON(http.StatusOK, grouped)
+}
+
+// UpdateRPCNode handles updating an RPC node
+// @Summary Update RPC node
+// @Tags rpc-nodes
+// @Accept json
+// @Produce json
+// @Param id path int true "RPC node ID"
+// @Param node body models.RPCNode true "Updated RPC node data"
+// @Success 200 {object} models.RPCNode
+// @Router /api/v1/rpc-nodes/{id} [put]
+func (h *RPCNodeHandler) UpdateRPCNode(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	// Get existing node first
+	existing, err := h.service.GetByID(c.Request.Context(), uint(id))
+	if err != nil {
+		h.logger.Error("Failed to get RPC node", zap.Error(err))
+		c.JSON(http.StatusNotFound, gin.H{"error": "RPC node not found"})
+		return
+	}
+
+	var req models.RPCNode
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Invalid request body", zap.Error(err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Preserve ID and timestamps
+	req.ID = uint(id)
+	req.CreatedAt = existing.CreatedAt
+
+	if err := h.service.Update(c.Request.Context(), &req); err != nil {
+		h.logger.Error("Failed to update RPC node", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update RPC node"})
+		return
+	}
+
+	c.JSON(http.StatusOK, req)
+}
+
+// DeleteRPCNode handles deleting an RPC node
+// @Summary Delete RPC node
+// @Tags rpc-nodes
+// @Param id path int true "RPC node ID"
+// @Success 204
+// @Router /api/v1/rpc-nodes/{id} [delete]
+func (h *RPCNodeHandler) DeleteRPCNode(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	if err := h.service.Delete(c.Request.Context(), uint(id)); err != nil {
+		h.logger.Error("Failed to delete RPC node", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete RPC node"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// CheckRPCNodeConnection handles testing the connection of a specific RPC node
+// @Summary Check RPC node connection
+// @Tags rpc-nodes
+// @Produce json
+// @Param id path int true "RPC node ID"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/rpc-nodes/{id}/check [post]
+func (h *RPCNodeHandler) CheckRPCNodeConnection(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	isConnected, err := h.service.CheckConnection(c.Request.Context(), uint(id))
+	if err != nil {
+		h.logger.Warn("Connection check failed",
+			zap.Uint64("node_id", id),
+			zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"connected": false,
+			"error":     err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"connected": isConnected,
+	})
+}
+
+// CheckAllRPCNodeConnections handles testing all RPC node connections
+// @Summary Check all RPC node connections
+// @Tags rpc-nodes
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/rpc-nodes/check-all [post]
+func (h *RPCNodeHandler) CheckAllRPCNodeConnections(c *gin.Context) {
+	if err := h.service.CheckAllConnections(c.Request.Context()); err != nil {
+		h.logger.Error("Failed to check all connections", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check connections"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Connection checks completed",
+	})
+}

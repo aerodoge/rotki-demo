@@ -1,0 +1,54 @@
+# Go
+bin/
+pics/
+
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+*.txt
+
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Config
+config.yaml
+config.docker.yaml
+config.local.yaml
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+coverage.txt
+coverage.html
+
+# Tmp
+tmp/
+temp/
