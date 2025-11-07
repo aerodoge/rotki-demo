@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/miles/rotki-demo/internal/config"
-	"github.com/miles/rotki-demo/internal/logger"
-	"github.com/miles/rotki-demo/internal/models"
+	"github.com/rotki-demo/internal/config"
+	"github.com/rotki-demo/internal/logger"
+	"github.com/rotki-demo/internal/models"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

@@ -52,3 +52,8 @@ coverage.html
 # Tmp
 tmp/
 temp/
+
+# Swagger generated files (optional - 如果想忽略的话取消注释)
+# docs/docs.go
+# docs/swagger.json
+# docs/swagger.yaml

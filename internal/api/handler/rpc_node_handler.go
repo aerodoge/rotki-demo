@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/miles/rotki-demo/internal/models"
-	"github.com/miles/rotki-demo/internal/service"
+	"github.com/rotki-demo/internal/models"
+	"github.com/rotki-demo/internal/service"
 	"go.uber.org/zap"
 )
 
@@ -25,13 +25,16 @@ func NewRPCNodeHandler(service *service.RPCNodeService, logger *zap.Logger) *RPC
 }
 
 // CreateRPCNode 处理创建新的 RPC 节点
-// @Summary Create RPC node
-// @Tags rpc-nodes
-// @Accept json
-// @Produce json
-// @Param node body models.RPCNode true "RPC node data"
-// @Success 201 {object} models.RPCNode
-// @Router /api/v1/rpc-nodes [post]
+// @Summary      创建 RPC 节点
+// @Description  创建一个新的 RPC 节点
+// @Tags         rpc-nodes
+// @Accept       json
+// @Produce      json
+// @Param        node  body      github_com_rotki-demo_internal_models.RPCNode  true  "RPC 节点数据"
+// @Success      201   {object}  github_com_rotki-demo_internal_models.RPCNode
+// @Failure      400   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Router       /rpc-nodes [post]
 func (h *RPCNodeHandler) CreateRPCNode(c *gin.Context) {
 	var req models.RPCNode
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -58,12 +61,15 @@ func (h *RPCNodeHandler) CreateRPCNode(c *gin.Context) {
 }
 
 // GetRPCNode 处理获取单个 RPC 节点
-// @Summary Get RPC node by ID
-// @Tags rpc-nodes
-// @Produce json
-// @Param id path int true "RPC node ID"
-// @Success 200 {object} models.RPCNode
-// @Router /api/v1/rpc-nodes/{id} [get]
+// @Summary      获取 RPC 节点
+// @Description  根据 ID 获取 RPC 节点
+// @Tags         rpc-nodes
+// @Produce      json
+// @Param        id   path      int  true  "RPC 节点 ID"
+// @Success      200  {object}  github_com_rotki-demo_internal_models.RPCNode
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /rpc-nodes/{id} [get]
 func (h *RPCNodeHandler) GetRPCNode(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -83,12 +89,14 @@ func (h *RPCNodeHandler) GetRPCNode(c *gin.Context) {
 }
 
 // ListRPCNodes 处理获取所有 RPC 节点
-// @Summary List all RPC nodes
-// @Tags rpc-nodes
-// @Produce json
-// @Param chain_id query string false "Filter by chain ID"
-// @Success 200 {array} models.RPCNode
-// @Router /api/v1/rpc-nodes [get]
+// @Summary      获取 RPC 节点列表
+// @Description  获取所有 RPC 节点，可按链 ID 过滤
+// @Tags         rpc-nodes
+// @Produce      json
+// @Param        chain_id  query     string  false  "按链 ID 过滤"
+// @Success      200       {array}   github_com_rotki-demo_internal_models.RPCNode
+// @Failure      500       {object}  map[string]string
+// @Router       /rpc-nodes [get]
 func (h *RPCNodeHandler) ListRPCNodes(c *gin.Context) {
 	chainID := c.Query("chain_id")
 

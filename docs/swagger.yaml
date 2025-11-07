@@ -1,0 +1,641 @@
+basePath: /api/v1
+definitions:
+  github_com_rotki-demo_internal_models.Address:
+    properties:
+      address:
+        type: string
+      asset_snapshots:
+        items:
+          $ref: '#/definitions/github_com_rotki-demo_internal_models.AssetSnapshot'
+        type: array
+      chain_type:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      label:
+        type: string
+      last_synced_at:
+        type: string
+      tags:
+        description: 用户定义的标签
+        items:
+          type: string
+        type: array
+      tokens:
+        items:
+          $ref: '#/definitions/github_com_rotki-demo_internal_models.Token'
+        type: array
+      updated_at:
+        type: string
+      wallet:
+        allOf:
+        - $ref: '#/definitions/github_com_rotki-demo_internal_models.Wallet'
+        description: 关系
+      wallet_id:
+        type: integer
+    type: object
+  github_com_rotki-demo_internal_models.AssetSnapshot:
+    properties:
+      address_id:
+        type: integer
+      created_at:
+        type: string
+      data_source:
+        type: string
+      id:
+        type: integer
+      raw_data:
+        $ref: '#/definitions/github_com_rotki-demo_internal_models.JSONMap'
+      snapshot_time:
+        type: string
+      total_usd_value:
+        type: number
+    type: object
+  github_com_rotki-demo_internal_models.Chain:
+    properties:
+      chain_type:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      logo_url:
+        type: string
+      name:
+        type: string
+      native_token_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_rotki-demo_internal_models.JSONMap:
+    additionalProperties: true
+    type: object
+  github_com_rotki-demo_internal_models.RPCNode:
+    properties:
+      chain:
+        allOf:
+        - $ref: '#/definitions/github_com_rotki-demo_internal_models.Chain'
+        description: 关系
+      chain_id:
+        description: eth、bsc、polygon 等
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_connected:
+        description: 连接状态
+        type: boolean
+      is_enabled:
+        description: 此节点是否处于活动状态
+        type: boolean
+      last_checked:
+        description: 最后连接检查时间
+        type: string
+      name:
+        description: 显示名称，如 "0xRPC"、"PublicNode"
+        type: string
+      priority:
+        description: 优先级更高的节点优先
+        type: integer
+      timeout:
+        description: 请求超时时间（秒）
+        type: integer
+      updated_at:
+        type: string
+      url:
+        description: RPC 端点 URL
+        type: string
+      weight:
+        description: 负载均衡权重（0-100）
+        type: integer
+    type: object
+  github_com_rotki-demo_internal_models.Token:
+    properties:
+      address:
+        allOf:
+        - $ref: '#/definitions/github_com_rotki-demo_internal_models.Address'
+        description: 关系
+      address_id:
+        type: integer
+      balance:
+        type: string
+      chain:
+        $ref: '#/definitions/github_com_rotki-demo_internal_models.Chain'
+      chain_id:
+        type: string
+      decimals:
+        type: integer
+      id:
+        type: integer
+      last_updated:
+        type: string
+      logo_url:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      symbol:
+        type: string
+      token_id:
+        type: string
+      usd_value:
+        type: number
+    type: object
+  github_com_rotki-demo_internal_models.Wallet:
+    properties:
+      addresses:
+        items:
+          $ref: '#/definitions/github_com_rotki-demo_internal_models.Address'
+        type: array
+      created_at:
+        type: string
+      description:
+        type: string
+      enabled_chains:
+        description: 启用的链 ID 列表，空表示所有链
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      tags:
+        description: 用户定义的标签
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: string
+    type: object
+  internal_api_handler.CreateAddressRequest:
+    properties:
+      address:
+        type: string
+      chain_type:
+        type: string
+      label:
+        type: string
+      wallet_id:
+        type: integer
+    required:
+    - address
+    - wallet_id
+    type: object
+  internal_api_handler.CreateWalletRequest:
+    properties:
+      description:
+        type: string
+      enabled_chains:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    required:
+    - name
+    type: object
+  internal_api_handler.UpdateWalletRequest:
+    properties:
+      description:
+        type: string
+      enabled_chains:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: DeFi 资产管理系统 API 文档
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Rotki Demo API
+  version: "1.0"
+paths:
+  /addresses:
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的区块链地址
+      parameters:
+      - description: 地址信息
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handler.CreateAddressRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_rotki-demo_internal_models.Address'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 创建地址
+      tags:
+      - addresses
+  /api/v1/rpc-nodes/{id}:
+    delete:
+      parameters:
+      - description: RPC node ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete RPC node
+      tags:
+      - rpc-nodes
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: RPC node ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated RPC node data
+        in: body
+        name: node
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_rotki-demo_internal_models.RPCNode'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_rotki-demo_internal_models.RPCNode'
+      summary: Update RPC node
+      tags:
+      - rpc-nodes
+  /api/v1/rpc-nodes/{id}/check:
+    post:
+      parameters:
+      - description: RPC node ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Check RPC node connection
+      tags:
+      - rpc-nodes
+  /api/v1/rpc-nodes/check-all:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Check all RPC node connections
+      tags:
+      - rpc-nodes
+  /api/v1/rpc-nodes/grouped:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/github_com_rotki-demo_internal_models.RPCNode'
+              type: array
+            type: object
+      summary: Get RPC nodes grouped by chain
+      tags:
+      - rpc-nodes
+  /chains:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有支持的区块链列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_rotki-demo_internal_models.Chain'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 获取链列表
+      tags:
+      - chains
+  /rpc-nodes:
+    get:
+      description: 获取所有 RPC 节点，可按链 ID 过滤
+      parameters:
+      - description: 按链 ID 过滤
+        in: query
+        name: chain_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_rotki-demo_internal_models.RPCNode'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 获取 RPC 节点列表
+      tags:
+      - rpc-nodes
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的 RPC 节点
+      parameters:
+      - description: RPC 节点数据
+        in: body
+        name: node
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_rotki-demo_internal_models.RPCNode'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_rotki-demo_internal_models.RPCNode'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 创建 RPC 节点
+      tags:
+      - rpc-nodes
+  /rpc-nodes/{id}:
+    get:
+      description: 根据 ID 获取 RPC 节点
+      parameters:
+      - description: RPC 节点 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_rotki-demo_internal_models.RPCNode'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 获取 RPC 节点
+      tags:
+      - rpc-nodes
+  /wallets:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有钱包列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_rotki-demo_internal_models.Wallet'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 获取钱包列表
+      tags:
+      - wallets
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的钱包
+      parameters:
+      - description: 钱包信息
+        in: body
+        name: wallet
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handler.CreateWalletRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_rotki-demo_internal_models.Wallet'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 创建钱包
+      tags:
+      - wallets
+  /wallets/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 根据 ID 删除钱包
+      parameters:
+      - description: 钱包 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 删除钱包
+      tags:
+      - wallets
+    get:
+      consumes:
+      - application/json
+      description: 根据 ID 获取钱包详情
+      parameters:
+      - description: 钱包 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_rotki-demo_internal_models.Wallet'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 获取钱包
+      tags:
+      - wallets
+    put:
+      consumes:
+      - application/json
+      description: 更新钱包信息
+      parameters:
+      - description: 钱包 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 钱包信息
+        in: body
+        name: wallet
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handler.UpdateWalletRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_rotki-demo_internal_models.Wallet'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 更新钱包
+      tags:
+      - wallets
+schemes:
+- http
+- https
+swagger: "2.0"

@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/miles/rotki-demo/internal/models"
-	"github.com/miles/rotki-demo/internal/repository"
+	"github.com/rotki-demo/internal/models"
+	"github.com/rotki-demo/internal/repository"
 )
 
 // WalletHandler 处理钱包相关的 HTTP 请求
@@ -38,7 +38,16 @@ type UpdateWalletRequest struct {
 }
 
 // CreateWallet 创建一个新的钱包
-// POST /api/v1/wallets
+// @Summary      创建钱包
+// @Description  创建一个新的钱包
+// @Tags         wallets
+// @Accept       json
+// @Produce      json
+// @Param        wallet  body      CreateWalletRequest  true  "钱包信息"
+// @Success      201     {object}  github_com_rotki-demo_internal_models.Wallet
+// @Failure      400     {object}  map[string]string
+// @Failure      500     {object}  map[string]string
+// @Router       /wallets [post]
 func (h *WalletHandler) CreateWallet(c *gin.Context) {
 	var req CreateWalletRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -62,7 +71,16 @@ func (h *WalletHandler) CreateWallet(c *gin.Context) {
 }
 
 // GetWallet 根据 ID 获取钱包
-// GET /api/v1/wallets/:id
+// @Summary      获取钱包
+// @Description  根据 ID 获取钱包详情
+// @Tags         wallets
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "钱包 ID"
+// @Success      200  {object}  github_com_rotki-demo_internal_models.Wallet
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /wallets/{id} [get]
 func (h *WalletHandler) GetWallet(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -80,7 +98,14 @@ func (h *WalletHandler) GetWallet(c *gin.Context) {
 }
 
 // ListWallets 获取所有钱包
-// GET /api/v1/wallets
+// @Summary      获取钱包列表
+// @Description  获取所有钱包列表
+// @Tags         wallets
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}   github_com_rotki-demo_internal_models.Wallet
+// @Failure      500  {object}  map[string]string
+// @Router       /wallets [get]
 func (h *WalletHandler) ListWallets(c *gin.Context) {
 	wallets, err := h.walletRepo.List()
 	if err != nil {
@@ -92,7 +117,18 @@ func (h *WalletHandler) ListWallets(c *gin.Context) {
 }
 
 // UpdateWallet 更新钱包
-// PUT /api/v1/wallets/:id
+// @Summary      更新钱包
+// @Description  更新钱包信息
+// @Tags         wallets
+// @Accept       json
+// @Produce      json
+// @Param        id      path      int                   true  "钱包 ID"
+// @Param        wallet  body      UpdateWalletRequest   true  "钱包信息"
+// @Success      200     {object}  github_com_rotki-demo_internal_models.Wallet
+// @Failure      400     {object}  map[string]string
+// @Failure      404     {object}  map[string]string
+// @Failure      500     {object}  map[string]string
+// @Router       /wallets/{id} [put]
 func (h *WalletHandler) UpdateWallet(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -139,7 +175,16 @@ func (h *WalletHandler) UpdateWallet(c *gin.Context) {
 }
 
 // DeleteWallet 删除钱包
-// DELETE /api/v1/wallets/:id
+// @Summary      删除钱包
+// @Description  根据 ID 删除钱包
+// @Tags         wallets
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "钱包 ID"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /wallets/{id} [delete]
 func (h *WalletHandler) DeleteWallet(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {

@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/miles/rotki-demo/internal/models"
-	"github.com/miles/rotki-demo/internal/repository"
-	"github.com/miles/rotki-demo/internal/service"
+	"github.com/rotki-demo/internal/models"
+	"github.com/rotki-demo/internal/repository"
+	"github.com/rotki-demo/internal/service"
 )
 
 // AddressHandler 处理地址相关的 HTTP 请求
@@ -46,7 +46,16 @@ type UpdateAddressRequest struct {
 }
 
 // CreateAddress 创建一个新的地址
-// POST /api/v1/addresses
+// @Summary      创建地址
+// @Description  创建一个新的区块链地址
+// @Tags         addresses
+// @Accept       json
+// @Produce      json
+// @Param        address  body      CreateAddressRequest  true  "地址信息"
+// @Success      201      {object}  github_com_rotki-demo_internal_models.Address
+// @Failure      400      {object}  map[string]string
+// @Failure      500      {object}  map[string]string
+// @Router       /addresses [post]
 func (h *AddressHandler) CreateAddress(c *gin.Context) {
 	var req CreateAddressRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

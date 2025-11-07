@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/miles/rotki-demo/internal/logger"
-	"github.com/miles/rotki-demo/internal/models"
-	"github.com/miles/rotki-demo/internal/provider"
-	"github.com/miles/rotki-demo/internal/repository"
+	"github.com/rotki-demo/internal/logger"
+	"github.com/rotki-demo/internal/models"
+	"github.com/rotki-demo/internal/provider"
+	"github.com/rotki-demo/internal/repository"
 	"go.uber.org/zap"
 )
 

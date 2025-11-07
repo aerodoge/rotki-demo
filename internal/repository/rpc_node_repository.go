@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/miles/rotki-demo/internal/models"
+	"github.com/rotki-demo/internal/models"
 	"gorm.io/gorm"
 )
 

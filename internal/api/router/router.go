@@ -3,7 +3,9 @@ package router
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/miles/rotki-demo/internal/api/handler"
+	"github.com/rotki-demo/internal/api/handler"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // SetupRouter 设置 HTTP 路由器
@@ -26,6 +28,9 @@ func SetupRouter(
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+
+	// Swagger API 文档
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API v1 路由
 	v1 := router.Group("/api/v1")

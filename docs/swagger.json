@@ -1,0 +1,972 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "DeFi 资产管理系统 API 文档",
+        "title": "Rotki Demo API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "support@example.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {
+        "/addresses": {
+            "post": {
+                "description": "创建一个新的区块链地址",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "addresses"
+                ],
+                "summary": "创建地址",
+                "parameters": [
+                    {
+                        "description": "地址信息",
+                        "name": "address",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handler.CreateAddressRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.Address"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/rpc-nodes/check-all": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rpc-nodes"
+                ],
+                "summary": "Check all RPC node connections",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/rpc-nodes/grouped": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rpc-nodes"
+                ],
+                "summary": "Get RPC nodes grouped by chain",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/github_com_rotki-demo_internal_models.RPCNode"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/rpc-nodes/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rpc-nodes"
+                ],
+                "summary": "Update RPC node",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "RPC node ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated RPC node data",
+                        "name": "node",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.RPCNode"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.RPCNode"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "rpc-nodes"
+                ],
+                "summary": "Delete RPC node",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "RPC node ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/v1/rpc-nodes/{id}/check": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rpc-nodes"
+                ],
+                "summary": "Check RPC node connection",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "RPC node ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/chains": {
+            "get": {
+                "description": "获取所有支持的区块链列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chains"
+                ],
+                "summary": "获取链列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_rotki-demo_internal_models.Chain"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/rpc-nodes": {
+            "get": {
+                "description": "获取所有 RPC 节点，可按链 ID 过滤",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rpc-nodes"
+                ],
+                "summary": "获取 RPC 节点列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "按链 ID 过滤",
+                        "name": "chain_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_rotki-demo_internal_models.RPCNode"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "创建一个新的 RPC 节点",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rpc-nodes"
+                ],
+                "summary": "创建 RPC 节点",
+                "parameters": [
+                    {
+                        "description": "RPC 节点数据",
+                        "name": "node",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.RPCNode"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.RPCNode"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/rpc-nodes/{id}": {
+            "get": {
+                "description": "根据 ID 获取 RPC 节点",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rpc-nodes"
+                ],
+                "summary": "获取 RPC 节点",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "RPC 节点 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.RPCNode"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wallets": {
+            "get": {
+                "description": "获取所有钱包列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallets"
+                ],
+                "summary": "获取钱包列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_rotki-demo_internal_models.Wallet"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "创建一个新的钱包",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallets"
+                ],
+                "summary": "创建钱包",
+                "parameters": [
+                    {
+                        "description": "钱包信息",
+                        "name": "wallet",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handler.CreateWalletRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.Wallet"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wallets/{id}": {
+            "get": {
+                "description": "根据 ID 获取钱包详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallets"
+                ],
+                "summary": "获取钱包",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "钱包 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.Wallet"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "更新钱包信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallets"
+                ],
+                "summary": "更新钱包",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "钱包 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "钱包信息",
+                        "name": "wallet",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handler.UpdateWalletRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.Wallet"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "根据 ID 删除钱包",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallets"
+                ],
+                "summary": "删除钱包",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "钱包 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_rotki-demo_internal_models.Address": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "asset_snapshots": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_rotki-demo_internal_models.AssetSnapshot"
+                    }
+                },
+                "chain_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "last_synced_at": {
+                    "type": "string"
+                },
+                "tags": {
+                    "description": "用户定义的标签",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_rotki-demo_internal_models.Token"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "wallet": {
+                    "description": "关系",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.Wallet"
+                        }
+                    ]
+                },
+                "wallet_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_rotki-demo_internal_models.AssetSnapshot": {
+            "type": "object",
+            "properties": {
+                "address_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "data_source": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "raw_data": {
+                    "$ref": "#/definitions/github_com_rotki-demo_internal_models.JSONMap"
+                },
+                "snapshot_time": {
+                    "type": "string"
+                },
+                "total_usd_value": {
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_rotki-demo_internal_models.Chain": {
+            "type": "object",
+            "properties": {
+                "chain_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "native_token_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_rotki-demo_internal_models.JSONMap": {
+            "type": "object",
+            "additionalProperties": true
+        },
+        "github_com_rotki-demo_internal_models.RPCNode": {
+            "type": "object",
+            "properties": {
+                "chain": {
+                    "description": "关系",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.Chain"
+                        }
+                    ]
+                },
+                "chain_id": {
+                    "description": "eth、bsc、polygon 等",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_connected": {
+                    "description": "连接状态",
+                    "type": "boolean"
+                },
+                "is_enabled": {
+                    "description": "此节点是否处于活动状态",
+                    "type": "boolean"
+                },
+                "last_checked": {
+                    "description": "最后连接检查时间",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "显示名称，如 \"0xRPC\"、\"PublicNode\"",
+                    "type": "string"
+                },
+                "priority": {
+                    "description": "优先级更高的节点优先",
+                    "type": "integer"
+                },
+                "timeout": {
+                    "description": "请求超时时间（秒）",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "url": {
+                    "description": "RPC 端点 URL",
+                    "type": "string"
+                },
+                "weight": {
+                    "description": "负载均衡权重（0-100）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_rotki-demo_internal_models.Token": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "description": "关系",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_rotki-demo_internal_models.Address"
+                        }
+                    ]
+                },
+                "address_id": {
+                    "type": "integer"
+                },
+                "balance": {
+                    "type": "string"
+                },
+                "chain": {
+                    "$ref": "#/definitions/github_com_rotki-demo_internal_models.Chain"
+                },
+                "chain_id": {
+                    "type": "string"
+                },
+                "decimals": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "last_updated": {
+                    "type": "string"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "token_id": {
+                    "type": "string"
+                },
+                "usd_value": {
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_rotki-demo_internal_models.Wallet": {
+            "type": "object",
+            "properties": {
+                "addresses": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_rotki-demo_internal_models.Address"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled_chains": {
+                    "description": "启用的链 ID 列表，空表示所有链",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "description": "用户定义的标签",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handler.CreateAddressRequest": {
+            "type": "object",
+            "required": [
+                "address",
+                "wallet_id"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "chain_type": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "wallet_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handler.CreateWalletRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "enabled_chains": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_api_handler.UpdateWalletRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "enabled_chains": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

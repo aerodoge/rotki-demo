@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"github.com/miles/rotki-demo/internal/config"
+	"github.com/rotki-demo/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"

@@ -322,6 +322,31 @@ npm run build           # 构建生产版本
 ./scripts/stop.sh         # 停止所有服务
 ```
 
+## API 文档
+
+本项目使用 **Swagger** 自动生成 API 文档。启动服务器后，访问交互式 API 文档：
+
+**🔗 Swagger UI：** http://localhost:8080/swagger/index.html
+
+### 生成 API 文档
+
+如果修改了 API 端点或注释，需要重新生成文档：
+
+```bash
+# 安装 swag 工具（仅需一次）
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# 生成文档
+~/go/bin/swag init -g cmd/server/main.go -o docs --parseDependency --parseInternal
+```
+
+生成的文档文件位于：
+- `docs/docs.go` - Go 代码形式
+- `docs/swagger.json` - JSON 格式
+- `docs/swagger.yaml` - YAML 格式
+
+更多详情请参见 [API 文档指南](docs/API.md)。
+
 ## API 端点
 
 ### 钱包
@@ -339,6 +364,19 @@ npm run build           # 构建生产版本
 - `GET /api/v1/addresses/:id` - 获取地址详情
 - `DELETE /api/v1/addresses/:id` - 删除地址
 - `POST /api/v1/addresses/:id/refresh` - 刷新地址数据
+
+### 链信息
+- `GET /api/v1/chains` - 获取所有支持的区块链列表
+
+### RPC 节点
+- `POST /api/v1/rpc-nodes` - 创建 RPC 节点
+- `GET /api/v1/rpc-nodes` - 获取 RPC 节点列表
+- `GET /api/v1/rpc-nodes/grouped` - 按链分组获取 RPC 节点
+- `GET /api/v1/rpc-nodes/:id` - 获取 RPC 节点详情
+- `PUT /api/v1/rpc-nodes/:id` - 更新 RPC 节点
+- `DELETE /api/v1/rpc-nodes/:id` - 删除 RPC 节点
+- `POST /api/v1/rpc-nodes/:id/check` - 检查单个 RPC 节点连接
+- `POST /api/v1/rpc-nodes/check-all` - 检查所有 RPC 节点连接
 
 ## 配置
 

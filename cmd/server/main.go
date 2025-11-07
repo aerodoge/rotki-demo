@@ -8,17 +8,34 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/miles/rotki-demo/internal/api/handler"
-	"github.com/miles/rotki-demo/internal/api/router"
-	"github.com/miles/rotki-demo/internal/config"
-	"github.com/miles/rotki-demo/internal/database"
-	"github.com/miles/rotki-demo/internal/logger"
-	"github.com/miles/rotki-demo/internal/provider/debank"
-	"github.com/miles/rotki-demo/internal/repository"
-	"github.com/miles/rotki-demo/internal/service"
+	"github.com/rotki-demo/internal/api/handler"
+	"github.com/rotki-demo/internal/api/router"
+	"github.com/rotki-demo/internal/config"
+	"github.com/rotki-demo/internal/database"
+	"github.com/rotki-demo/internal/logger"
+	"github.com/rotki-demo/internal/provider/debank"
+	"github.com/rotki-demo/internal/repository"
+	"github.com/rotki-demo/internal/service"
 	"go.uber.org/zap"
+
+	_ "github.com/rotki-demo/docs" // 导入 Swagger 文档
 )
 
+// @title           Rotki Demo API
+// @version         1.0
+// @description     DeFi 资产管理系统 API 文档
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.email  support@example.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @schemes http https
 func main() {
 	// 加载配置
 	cfg, err := config.LoadConfig("config.yaml")
