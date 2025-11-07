@@ -6,7 +6,7 @@ import (
 	"github.com/miles/rotki-demo/internal/api/handler"
 )
 
-// SetupRouter sets up the HTTP router
+// SetupRouter 设置 HTTP 路由器
 func SetupRouter(
 	walletHandler *handler.WalletHandler,
 	addressHandler *handler.AddressHandler,
@@ -15,22 +15,22 @@ func SetupRouter(
 ) *gin.Engine {
 	router := gin.Default()
 
-	// CORS middleware
+	// CORS 中间件
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"*"}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
 	router.Use(cors.New(config))
 
-	// Health check
+	// 健康检查
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	// API v1 routes
+	// API v1 路由
 	v1 := router.Group("/api/v1")
 	{
-		// Wallet routes
+		// 钱包路由
 		wallets := v1.Group("/wallets")
 		{
 			wallets.POST("", walletHandler.CreateWallet)
@@ -41,7 +41,7 @@ func SetupRouter(
 			wallets.POST("/:id/refresh", addressHandler.RefreshWallet)
 		}
 
-		// Address routes
+		// 地址路由
 		addresses := v1.Group("/addresses")
 		{
 			addresses.POST("", addressHandler.CreateAddress)
@@ -52,13 +52,13 @@ func SetupRouter(
 			addresses.POST("/:id/refresh", addressHandler.RefreshAddress)
 		}
 
-		// Chain routes
+		// 链路由
 		chains := v1.Group("/chains")
 		{
 			chains.GET("", chainHandler.ListChains)
 		}
 
-		// RPC Node routes
+		// RPC 节点路由
 		rpcNodes := v1.Group("/rpc-nodes")
 		{
 			rpcNodes.POST("", rpcNodeHandler.CreateRPCNode)

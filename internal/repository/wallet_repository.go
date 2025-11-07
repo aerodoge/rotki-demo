@@ -5,22 +5,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// WalletRepository handles wallet data operations
+// WalletRepository 处理钱包数据操作
 type WalletRepository struct {
 	db *gorm.DB
 }
 
-// NewWalletRepository creates a new wallet repository
+// NewWalletRepository 创建一个新的钱包仓库
 func NewWalletRepository(db *gorm.DB) *WalletRepository {
 	return &WalletRepository{db: db}
 }
 
-// Create creates a new wallet
+// Create 创建一个新钱包
 func (r *WalletRepository) Create(wallet *models.Wallet) error {
 	return r.db.Create(wallet).Error
 }
 
-// GetByID retrieves a wallet by ID
+// GetByID 根据 ID 获取钱包
 func (r *WalletRepository) GetByID(id uint) (*models.Wallet, error) {
 	var wallet models.Wallet
 	err := r.db.Preload("Addresses").First(&wallet, id).Error
@@ -30,7 +30,7 @@ func (r *WalletRepository) GetByID(id uint) (*models.Wallet, error) {
 	return &wallet, nil
 }
 
-// GetByName retrieves a wallet by name
+// GetByName 根据名称获取钱包
 func (r *WalletRepository) GetByName(name string) (*models.Wallet, error) {
 	var wallet models.Wallet
 	err := r.db.Where("name = ?", name).Preload("Addresses").First(&wallet).Error
@@ -40,19 +40,19 @@ func (r *WalletRepository) GetByName(name string) (*models.Wallet, error) {
 	return &wallet, nil
 }
 
-// List retrieves all wallets
+// List 获取所有钱包
 func (r *WalletRepository) List() ([]models.Wallet, error) {
 	var wallets []models.Wallet
 	err := r.db.Preload("Addresses").Find(&wallets).Error
 	return wallets, err
 }
 
-// Update updates a wallet
+// Update 更新钱包
 func (r *WalletRepository) Update(wallet *models.Wallet) error {
 	return r.db.Save(wallet).Error
 }
 
-// Delete deletes a wallet
+// Delete 删除钱包
 func (r *WalletRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Wallet{}, id).Error
 }

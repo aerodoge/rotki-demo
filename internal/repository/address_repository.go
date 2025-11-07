@@ -7,22 +7,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// AddressRepository handles address data operations
+// AddressRepository 处理地址数据操作
 type AddressRepository struct {
 	db *gorm.DB
 }
 
-// NewAddressRepository creates a new address repository
+// NewAddressRepository 创建一个新的地址仓库
 func NewAddressRepository(db *gorm.DB) *AddressRepository {
 	return &AddressRepository{db: db}
 }
 
-// Create creates a new address
+// Create 创建一个新地址
 func (r *AddressRepository) Create(address *models.Address) error {
 	return r.db.Create(address).Error
 }
 
-// GetByID retrieves an address by ID
+// GetByID 根据 ID 获取地址
 func (r *AddressRepository) GetByID(id uint) (*models.Address, error) {
 	var address models.Address
 	err := r.db.Preload("Wallet").Preload("Tokens").First(&address, id).Error
@@ -32,7 +32,7 @@ func (r *AddressRepository) GetByID(id uint) (*models.Address, error) {
 	return &address, nil
 }
 
-// GetByAddress retrieves an address by address string and chain type
+// GetByAddress 根据地址字符串和链类型获取地址
 func (r *AddressRepository) GetByAddress(addr string, chainType string) (*models.Address, error) {
 	var address models.Address
 	err := r.db.Where("address = ? AND chain_type = ?", addr, chainType).
@@ -45,7 +45,7 @@ func (r *AddressRepository) GetByAddress(addr string, chainType string) (*models
 	return &address, nil
 }
 
-// GetByWalletID retrieves all addresses for a wallet
+// GetByWalletID 获取钱包的所有地址
 func (r *AddressRepository) GetByWalletID(walletID uint) ([]models.Address, error) {
 	var addresses []models.Address
 	err := r.db.Where("wallet_id = ?", walletID).
@@ -54,30 +54,30 @@ func (r *AddressRepository) GetByWalletID(walletID uint) ([]models.Address, erro
 	return addresses, err
 }
 
-// List retrieves all addresses
+// List 获取所有地址
 func (r *AddressRepository) List() ([]models.Address, error) {
 	var addresses []models.Address
 	err := r.db.Preload("Wallet").Preload("Tokens").Find(&addresses).Error
 	return addresses, err
 }
 
-// Update updates an address
+// Update 更新地址
 func (r *AddressRepository) Update(address *models.Address) error {
 	return r.db.Save(address).Error
 }
 
-// UpdateLastSynced updates the last synced timestamp
+// UpdateLastSynced 更新最后同步时间戳
 func (r *AddressRepository) UpdateLastSynced(id uint) error {
 	now := time.Now()
 	return r.db.Model(&models.Address{}).Where("id = ?", id).Update("last_synced_at", now).Error
 }
 
-// Delete deletes an address
+// Delete 删除地址
 func (r *AddressRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Address{}, id).Error
 }
 
-// GetAllNeedingSync returns addresses that haven't been synced recently
+// GetAllNeedingSync 返回最近未同步的地址
 func (r *AddressRepository) GetAllNeedingSync(olderThan time.Duration) ([]models.Address, error) {
 	var addresses []models.Address
 	cutoffTime := time.Now().Add(-olderThan)

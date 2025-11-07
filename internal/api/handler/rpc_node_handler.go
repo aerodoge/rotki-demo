@@ -10,13 +10,13 @@ import (
 	"go.uber.org/zap"
 )
 
-// RPCNodeHandler handles RPC node-related HTTP requests
+// RPCNodeHandler 处理 RPC 节点相关的 HTTP 请求
 type RPCNodeHandler struct {
 	service *service.RPCNodeService
 	logger  *zap.Logger
 }
 
-// NewRPCNodeHandler creates a new RPC node handler
+// NewRPCNodeHandler 创建一个新的 RPC 节点处理器
 func NewRPCNodeHandler(service *service.RPCNodeService, logger *zap.Logger) *RPCNodeHandler {
 	return &RPCNodeHandler{
 		service: service,
@@ -24,7 +24,7 @@ func NewRPCNodeHandler(service *service.RPCNodeService, logger *zap.Logger) *RPC
 	}
 }
 
-// CreateRPCNode handles creating a new RPC node
+// CreateRPCNode 处理创建新的 RPC 节点
 // @Summary Create RPC node
 // @Tags rpc-nodes
 // @Accept json
@@ -40,7 +40,7 @@ func (h *RPCNodeHandler) CreateRPCNode(c *gin.Context) {
 		return
 	}
 
-	// Set defaults if not provided
+	// 如果未提供则设置默认值
 	if req.Timeout == 0 {
 		req.Timeout = 30
 	}
@@ -57,7 +57,7 @@ func (h *RPCNodeHandler) CreateRPCNode(c *gin.Context) {
 	c.JSON(http.StatusCreated, req)
 }
 
-// GetRPCNode handles retrieving a single RPC node
+// GetRPCNode 处理获取单个 RPC 节点
 // @Summary Get RPC node by ID
 // @Tags rpc-nodes
 // @Produce json
@@ -82,7 +82,7 @@ func (h *RPCNodeHandler) GetRPCNode(c *gin.Context) {
 	c.JSON(http.StatusOK, node)
 }
 
-// ListRPCNodes handles retrieving all RPC nodes
+// ListRPCNodes 处理获取所有 RPC 节点
 // @Summary List all RPC nodes
 // @Tags rpc-nodes
 // @Produce json
@@ -110,7 +110,7 @@ func (h *RPCNodeHandler) ListRPCNodes(c *gin.Context) {
 	c.JSON(http.StatusOK, nodes)
 }
 
-// GetRPCNodesByChain handles retrieving RPC nodes grouped by chain
+// GetRPCNodesByChain 处理获取按链分组的 RPC 节点
 // @Summary Get RPC nodes grouped by chain
 // @Tags rpc-nodes
 // @Produce json
@@ -127,7 +127,7 @@ func (h *RPCNodeHandler) GetRPCNodesByChain(c *gin.Context) {
 	c.JSON(http.StatusOK, grouped)
 }
 
-// UpdateRPCNode handles updating an RPC node
+// UpdateRPCNode 处理更新 RPC 节点
 // @Summary Update RPC node
 // @Tags rpc-nodes
 // @Accept json
@@ -144,7 +144,7 @@ func (h *RPCNodeHandler) UpdateRPCNode(c *gin.Context) {
 		return
 	}
 
-	// Get existing node first
+	// 首先获取现有节点
 	existing, err := h.service.GetByID(c.Request.Context(), uint(id))
 	if err != nil {
 		h.logger.Error("Failed to get RPC node", zap.Error(err))
@@ -159,7 +159,7 @@ func (h *RPCNodeHandler) UpdateRPCNode(c *gin.Context) {
 		return
 	}
 
-	// Preserve ID and timestamps
+	// 保留 ID 和时间戳
 	req.ID = uint(id)
 	req.CreatedAt = existing.CreatedAt
 
@@ -172,7 +172,7 @@ func (h *RPCNodeHandler) UpdateRPCNode(c *gin.Context) {
 	c.JSON(http.StatusOK, req)
 }
 
-// DeleteRPCNode handles deleting an RPC node
+// DeleteRPCNode 处理删除 RPC 节点
 // @Summary Delete RPC node
 // @Tags rpc-nodes
 // @Param id path int true "RPC node ID"
@@ -195,7 +195,7 @@ func (h *RPCNodeHandler) DeleteRPCNode(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// CheckRPCNodeConnection handles testing the connection of a specific RPC node
+// CheckRPCNodeConnection 处理测试特定 RPC 节点的连接
 // @Summary Check RPC node connection
 // @Tags rpc-nodes
 // @Produce json
@@ -227,7 +227,7 @@ func (h *RPCNodeHandler) CheckRPCNodeConnection(c *gin.Context) {
 	})
 }
 
-// CheckAllRPCNodeConnections handles testing all RPC node connections
+// CheckAllRPCNodeConnections 处理测试所有 RPC 节点的连接
 // @Summary Check all RPC node connections
 // @Tags rpc-nodes
 // @Produce json

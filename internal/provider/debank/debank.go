@@ -16,16 +16,16 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// DeBankProvider implements the DataProvider interface using DeBank API
+// DeBankProvider 使用 DeBank API 实现 DataProvider 接口
 type DeBankProvider struct {
 	config      *config.DeBankConfig
 	httpClient  *http.Client
 	rateLimiter *rate.Limiter
 }
 
-// NewDeBankProvider creates a new DeBank provider instance
+// NewDeBankProvider 创建一个新的 DeBank 提供者实例
 func NewDeBankProvider(cfg *config.DeBankConfig) *DeBankProvider {
-	// Create rate limiter: requests per second with burst capacity
+	// 创建速率限制器：每秒请求数和突发容量
 	limiter := rate.NewLimiter(
 		rate.Limit(cfg.RateLimit.RequestsPerSecond),
 		cfg.RateLimit.Burst,
@@ -40,19 +40,19 @@ func NewDeBankProvider(cfg *config.DeBankConfig) *DeBankProvider {
 	}
 }
 
-// GetName returns the provider name
+// GetName 返回提供者名称
 func (d *DeBankProvider) GetName() string {
 	return "debank"
 }
 
-// doRequest performs an HTTP request with rate limiting
+// doRequest 执行带速率限制的 HTTP 请求
 func (d *DeBankProvider) doRequest(ctx context.Context, path string, params map[string]string) ([]byte, error) {
-	// Wait for rate limiter
+	// 等待速率限制器
 	if err := d.rateLimiter.Wait(ctx); err != nil {
 		return nil, fmt.Errorf("rate limiter error: %w", err)
 	}
 
-	// Build URL with query parameters
+	// 构建带查询参数的 URL
 	url := d.config.BaseURL + path
 	if len(params) > 0 {
 		queryParts := make([]string, 0, len(params))
@@ -62,36 +62,36 @@ func (d *DeBankProvider) doRequest(ctx context.Context, path string, params map[
 		url = url + "?" + strings.Join(queryParts, "&")
 	}
 
-	// Create request
+	// 创建请求
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Add headers
+	// 添加请求头
 	req.Header.Set("AccessKey", d.config.APIKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	// Log request
+	// 记录请求
 	logger.Debug("DeBank API request",
 		zap.String("url", url),
 		zap.Any("params", params),
 	)
 
-	// Execute request
+	// 执行请求
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Read response body
+	// 读取响应体
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	// Check status code
+	// 检查状态码
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("DeBank API error",
 			zap.Int("status_code", resp.StatusCode),
@@ -103,7 +103,7 @@ func (d *DeBankProvider) doRequest(ctx context.Context, path string, params map[
 	return body, nil
 }
 
-// GetTotalBalance returns the total balance for an address
+// GetTotalBalance 返回地址的总余额
 func (d *DeBankProvider) GetTotalBalance(ctx context.Context, address string) (*provider.TotalBalanceResponse, error) {
 	body, err := d.doRequest(ctx, "/v1/user/total_balance", map[string]string{
 		"id": address,
@@ -139,14 +139,14 @@ func (d *DeBankProvider) GetTotalBalance(ctx context.Context, address string) (*
 	return result, nil
 }
 
-// GetTokenList returns token list for an address
+// GetTokenList 返回地址的代币列表
 func (d *DeBankProvider) GetTokenList(ctx context.Context, address string, chainIDs []string) ([]provider.TokenInfo, error) {
 	params := map[string]string{
 		"id":     address,
 		"is_all": "true",
 	}
 
-	// If specific chains requested, use them
+	// 如果请求特定链，使用它们
 	if len(chainIDs) > 0 {
 		params["chain_ids"] = strings.Join(chainIDs, ",")
 	}
@@ -156,7 +156,7 @@ func (d *DeBankProvider) GetTokenList(ctx context.Context, address string, chain
 		return nil, err
 	}
 
-	// Custom type to handle both string and number for raw_amount
+	// 自定义类型以处理 raw_amount 的字符串和数字
 	type FlexibleString struct {
 		Value string
 	}
@@ -169,7 +169,7 @@ func (d *DeBankProvider) GetTokenList(ctx context.Context, address string, chain
 		Decimals   int             `json:"decimals"`
 		LogoURL    string          `json:"logo_url"`
 		Amount     float64         `json:"amount"`
-		RawAmount  json.RawMessage `json:"raw_amount"` // Use RawMessage to handle both string and number
+		RawAmount  json.RawMessage `json:"raw_amount"` // 使用 RawMessage 处理字符串和数字
 		Price      float64         `json:"price"`
 		IsCore     bool            `json:"is_core"`
 		IsVerified bool            `json:"is_verified"`
@@ -183,12 +183,12 @@ func (d *DeBankProvider) GetTokenList(ctx context.Context, address string, chain
 
 	result := make([]provider.TokenInfo, len(tokens))
 	for i, token := range tokens {
-		// Parse raw_amount which can be either string or number
+		// 解析 raw_amount，可以是字符串或数字
 		var rawAmount string
 		if len(token.RawAmount) > 0 {
-			// Try to unmarshal as string first
+			// 首先尝试作为字符串解析
 			if err := json.Unmarshal(token.RawAmount, &rawAmount); err != nil {
-				// If failed, it might be a number, convert it
+				// 如果失败，可能是数字，转换它
 				var numAmount float64
 				if err := json.Unmarshal(token.RawAmount, &numAmount); err == nil {
 					rawAmount = fmt.Sprintf("%.0f", numAmount)
@@ -218,7 +218,7 @@ func (d *DeBankProvider) GetTokenList(ctx context.Context, address string, chain
 	return result, nil
 }
 
-// GetUsedChainList returns chains used by an address
+// GetUsedChainList 返回地址使用的链
 func (d *DeBankProvider) GetUsedChainList(ctx context.Context, address string) ([]provider.ChainInfo, error) {
 	body, err := d.doRequest(ctx, "/v1/user/used_chain_list", map[string]string{
 		"id": address,
@@ -251,7 +251,7 @@ func (d *DeBankProvider) GetUsedChainList(ctx context.Context, address string) (
 	return result, nil
 }
 
-// GetProtocolList returns DeFi protocol positions
+// GetProtocolList 返回 DeFi 协议持仓
 func (d *DeBankProvider) GetProtocolList(ctx context.Context, address string, chainIDs []string) ([]provider.ProtocolInfo, error) {
 	params := map[string]string{
 		"id": address,

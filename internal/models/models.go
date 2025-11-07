@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-// StringSlice is a custom type for storing string arrays as JSON
+// StringSlice 是用于将字符串数组存储为 JSON 的自定义类型
 type StringSlice []string
 
-// Scan implements the sql.Scanner interface
+// Scan 实现 sql.Scanner 接口
 func (s *StringSlice) Scan(value interface{}) error {
 	if value == nil {
 		*s = []string{}
@@ -22,7 +22,7 @@ func (s *StringSlice) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, s)
 }
 
-// Value implements the driver.Valuer interface
+// Value 实现 driver.Valuer 接口
 func (s StringSlice) Value() (driver.Value, error) {
 	if s == nil || len(s) == 0 {
 		return nil, nil
@@ -30,40 +30,40 @@ func (s StringSlice) Value() (driver.Value, error) {
 	return json.Marshal(s)
 }
 
-// Wallet represents a wallet that can contain multiple addresses
+// Wallet 表示可以包含多个地址的钱包
 type Wallet struct {
 	ID            uint        `gorm:"primaryKey" json:"id"`
 	Name          string      `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
 	Description   string      `gorm:"type:text" json:"description"`
-	Tags          StringSlice `gorm:"type:json" json:"tags"`           // User-defined tags
-	EnabledChains StringSlice `gorm:"type:json" json:"enabled_chains"` // List of enabled chain IDs, empty means all chains
+	Tags          StringSlice `gorm:"type:json" json:"tags"`           // 用户定义的标签
+	EnabledChains StringSlice `gorm:"type:json" json:"enabled_chains"` // 启用的链 ID 列表，空表示所有链
 	Addresses     []Address   `gorm:"foreignKey:WalletID" json:"addresses,omitempty"`
 	CreatedAt     time.Time   `json:"created_at"`
 	UpdatedAt     time.Time   `json:"updated_at"`
 }
 
-// Address represents a blockchain address
+// Address 表示区块链地址
 type Address struct {
 	ID           uint        `gorm:"primaryKey" json:"id"`
 	WalletID     uint        `gorm:"not null;index" json:"wallet_id"`
 	Address      string      `gorm:"type:varchar(255);not null;index" json:"address"`
 	ChainType    string      `gorm:"type:varchar(50);not null;default:'EVM'" json:"chain_type"`
 	Label        string      `gorm:"type:varchar(255)" json:"label"`
-	Tags         StringSlice `gorm:"type:json" json:"tags"` // User-defined tags
+	Tags         StringSlice `gorm:"type:json" json:"tags"` // 用户定义的标签
 	LastSyncedAt *time.Time  `json:"last_synced_at,omitempty"`
 	CreatedAt    time.Time   `json:"created_at"`
 	UpdatedAt    time.Time   `json:"updated_at"`
 
-	// Relations
+	// 关系
 	Wallet         *Wallet         `gorm:"foreignKey:WalletID" json:"wallet,omitempty"`
 	Tokens         []Token         `gorm:"foreignKey:AddressID" json:"tokens,omitempty"`
 	AssetSnapshots []AssetSnapshot `gorm:"foreignKey:AddressID" json:"asset_snapshots,omitempty"`
 }
 
-// JSONMap is a custom type for storing JSON data
+// JSONMap 是用于存储 JSON 数据的自定义类型
 type JSONMap map[string]interface{}
 
-// Scan implements the sql.Scanner interface
+// Scan 实现 sql.Scanner 接口
 func (j *JSONMap) Scan(value interface{}) error {
 	if value == nil {
 		*j = make(JSONMap)
@@ -76,7 +76,7 @@ func (j *JSONMap) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, j)
 }
 
-// Value implements the driver.Valuer interface
+// Value 实现 driver.Valuer 接口
 func (j JSONMap) Value() (driver.Value, error) {
 	if j == nil {
 		return nil, nil
@@ -84,7 +84,7 @@ func (j JSONMap) Value() (driver.Value, error) {
 	return json.Marshal(j)
 }
 
-// AssetSnapshot stores periodic snapshots of assets
+// AssetSnapshot 存储资产的定期快照
 type AssetSnapshot struct {
 	ID            uint      `gorm:"primaryKey" json:"id"`
 	AddressID     uint      `gorm:"not null;index:idx_address_time" json:"address_id"`
@@ -95,7 +95,7 @@ type AssetSnapshot struct {
 	CreatedAt     time.Time `json:"created_at"`
 }
 
-// Chain represents a blockchain network
+// Chain 表示区块链网络
 type Chain struct {
 	ID            string    `gorm:"primaryKey" json:"id"`
 	Name          string    `gorm:"not null" json:"name"`
@@ -107,7 +107,7 @@ type Chain struct {
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
-// Token represents a token balance for an address
+// Token 表示地址的代币余额
 type Token struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
 	AddressID   uint      `gorm:"not null;index;uniqueIndex:uk_address_chain_token" json:"address_id"`
@@ -122,18 +122,18 @@ type Token struct {
 	USDValue    float64   `gorm:"type:decimal(30,6)" json:"usd_value"`
 	LastUpdated time.Time `gorm:"autoUpdateTime" json:"last_updated"`
 
-	// Relations
+	// 关系
 	Address *Address `gorm:"foreignKey:AddressID" json:"address,omitempty"`
 	Chain   *Chain   `gorm:"foreignKey:ChainID" json:"chain,omitempty"`
 }
 
-// SyncJob tracks background sync operations
+// SyncJob 跟踪后台同步操作
 type SyncJob struct {
 	ID           uint       `gorm:"primaryKey" json:"id"`
 	AddressID    *uint      `gorm:"index" json:"address_id,omitempty"`
 	WalletID     *uint      `gorm:"index" json:"wallet_id,omitempty"`
-	JobType      string     `gorm:"not null" json:"job_type"`     // full_sync, token_sync, protocol_sync
-	Status       string     `gorm:"not null;index" json:"status"` // pending, running, completed, failed
+	JobType      string     `gorm:"not null" json:"job_type"`     // full_sync、token_sync、protocol_sync
+	Status       string     `gorm:"not null;index" json:"status"` // pending、running、completed、failed
 	StartedAt    *time.Time `json:"started_at,omitempty"`
 	CompletedAt  *time.Time `json:"completed_at,omitempty"`
 	ErrorMessage string     `gorm:"type:text" json:"error_message,omitempty"`
@@ -141,26 +141,26 @@ type SyncJob struct {
 	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
-// RPCNode represents an RPC node configuration for a specific chain
+// RPCNode 表示特定链的 RPC 节点配置
 type RPCNode struct {
 	ID          uint       `gorm:"primaryKey" json:"id"`
-	ChainID     string     `gorm:"type:varchar(50);not null;index" json:"chain_id"` // eth, bsc, polygon, etc.
-	Name        string     `gorm:"type:varchar(255);not null" json:"name"`          // Display name like "0xRPC", "PublicNode"
-	URL         string     `gorm:"type:varchar(500);not null" json:"url"`           // RPC endpoint URL
-	Weight      int        `gorm:"not null;default:100" json:"weight"`              // Weight for load balancing (0-100)
-	IsEnabled   bool       `gorm:"not null;default:true" json:"is_enabled"`         // Whether this node is active
-	IsConnected bool       `gorm:"not null;default:false" json:"is_connected"`      // Connection status
-	LastChecked *time.Time `json:"last_checked,omitempty"`                          // Last connectivity check time
-	Priority    int        `gorm:"not null;default:0" json:"priority"`              // Higher priority nodes are preferred
-	Timeout     int        `gorm:"not null;default:30" json:"timeout"`              // Request timeout in seconds
+	ChainID     string     `gorm:"type:varchar(50);not null;index" json:"chain_id"` // eth、bsc、polygon 等
+	Name        string     `gorm:"type:varchar(255);not null" json:"name"`          // 显示名称，如 "0xRPC"、"PublicNode"
+	URL         string     `gorm:"type:varchar(500);not null" json:"url"`           // RPC 端点 URL
+	Weight      int        `gorm:"not null;default:100" json:"weight"`              // 负载均衡权重（0-100）
+	IsEnabled   bool       `gorm:"not null;default:true" json:"is_enabled"`         // 此节点是否处于活动状态
+	IsConnected bool       `gorm:"not null;default:false" json:"is_connected"`      // 连接状态
+	LastChecked *time.Time `json:"last_checked,omitempty"`                          // 最后连接检查时间
+	Priority    int        `gorm:"not null;default:0" json:"priority"`              // 优先级更高的节点优先
+	Timeout     int        `gorm:"not null;default:30" json:"timeout"`              // 请求超时时间（秒）
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
 
-	// Relations
+	// 关系
 	Chain *Chain `gorm:"foreignKey:ChainID" json:"chain,omitempty"`
 }
 
-// TableName overrides
+// TableName 覆盖表名
 func (Wallet) TableName() string        { return "wallets" }
 func (Address) TableName() string       { return "addresses" }
 func (AssetSnapshot) TableName() string { return "asset_snapshots" }

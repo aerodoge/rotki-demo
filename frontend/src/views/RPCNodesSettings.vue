@@ -1,6 +1,6 @@
 <template>
   <div class="rpc-nodes-settings">
-    <!-- Header Section -->
+    <!-- 标题部分 -->
     <div class="settings-header">
       <div>
         <h2>RPC node setting</h2>
@@ -9,7 +9,7 @@
       <button class="btn-add-node" @click="openAddNodeModal(activeChain)">+ Add Node</button>
     </div>
 
-    <!-- Chain Tabs -->
+    <!-- 链标签页 -->
     <div class="chain-tabs-container">
       <div class="chain-tabs">
         <button
@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <!-- RPC Nodes Table -->
+    <!-- RPC节点表格 -->
     <div class="nodes-table-container">
       <div class="nodes-table-header">
         <div class="col-node">Node</div>
@@ -37,7 +37,9 @@
 
       <div v-else-if="currentChainNodes.length === 0" class="empty-state">
         <p>No RPC nodes configured for this chain.</p>
-        <button class="btn-secondary" @click="openAddNodeModal(activeChain)">Add your first node</button>
+        <button class="btn-secondary" @click="openAddNodeModal(activeChain)">
+          Add your first node
+        </button>
       </div>
 
       <div v-else class="nodes-list">
@@ -72,7 +74,7 @@
       </div>
     </div>
 
-    <!-- Add/Edit Node Modal -->
+    <!-- 添加/编辑节点模态框 -->
     <div
       v-if="showAddNodeModal || showEditNodeModal"
       class="modal-overlay"
@@ -155,7 +157,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { rpcNodesAPI, chainsAPI } from '../api/client'
 
-// State
+// 状态
 const loading = ref(true)
 const rpcNodesByChain = ref({})
 const supportedChains = ref([])
@@ -164,7 +166,7 @@ const showAddNodeModal = ref(false)
 const showEditNodeModal = ref(false)
 const nodeFormError = ref('')
 
-// Node form
+// 节点表单
 const nodeForm = ref({
   id: null,
   chain_id: '',
@@ -176,7 +178,7 @@ const nodeForm = ref({
   is_enabled: true
 })
 
-// Computed
+// 计算属性
 const currentChainNodes = computed(() => {
   return rpcNodesByChain.value[activeChain.value] || []
 })
@@ -191,12 +193,12 @@ const isFormValid = computed(() => {
   )
 })
 
-// Methods
+// 方法
 const loadChains = async () => {
   try {
     const response = await chainsAPI.list()
     supportedChains.value = response.data || []
-    // Set default active chain to first chain if available
+    // 如果可用，将默认活动链设置为第一条链
     if (supportedChains.value.length > 0 && !activeChain.value) {
       activeChain.value = supportedChains.value[0].id
     }
@@ -261,10 +263,10 @@ const saveNode = async () => {
 
   try {
     if (showEditNodeModal.value) {
-      // Update existing node
+      // 更新现有节点
       await rpcNodesAPI.update(nodeForm.value.id, nodeForm.value)
     } else {
-      // Create new node
+      // 创建新节点
       await rpcNodesAPI.create(nodeForm.value)
     }
 
@@ -303,7 +305,7 @@ const toggleNodeEnabled = async (node) => {
   }
 }
 
-// Lifecycle
+// 生命周期
 onMounted(async () => {
   await loadChains()
   await loadRPCNodes()
@@ -353,7 +355,7 @@ onMounted(async () => {
   background: #4752c4;
 }
 
-/* Chain Tabs */
+/* 链标签页 */
 .chain-tabs-container {
   margin-bottom: 24px;
   border-bottom: 1px solid #e0e0e0;
@@ -397,7 +399,7 @@ onMounted(async () => {
   border-radius: 50%;
 }
 
-/* Nodes Table */
+/* 节点表格 */
 .nodes-table-container {
   background: white;
   border-radius: 8px;
@@ -563,7 +565,7 @@ input:checked + .toggle-slider:before {
   opacity: 1;
 }
 
-/* Empty/Loading States */
+/* 空状态/加载状态 */
 .loading-state,
 .empty-state {
   padding: 60px 20px;

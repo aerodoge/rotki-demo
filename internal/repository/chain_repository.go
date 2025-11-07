@@ -6,30 +6,30 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// ChainRepository handles chain data access
+// ChainRepository 处理链数据访问
 type ChainRepository struct {
 	db *gorm.DB
 }
 
-// NewChainRepository creates a new chain repository
+// NewChainRepository 创建一个新的链仓库
 func NewChainRepository(db *gorm.DB) *ChainRepository {
 	return &ChainRepository{db: db}
 }
 
-// UpsertBatch inserts or updates multiple chains
+// UpsertBatch 插入或更新多个链
 func (r *ChainRepository) UpsertBatch(chains []models.Chain) error {
 	if len(chains) == 0 {
 		return nil
 	}
 
-	// Use ON DUPLICATE KEY UPDATE for MySQL
+	// 为 MySQL 使用 ON DUPLICATE KEY UPDATE
 	return r.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"name", "logo_url", "native_token_id"}),
 	}).Create(&chains).Error
 }
 
-// GetByID retrieves a chain by ID
+// GetByID 根据 ID 获取链
 func (r *ChainRepository) GetByID(chainID string) (*models.Chain, error) {
 	var chain models.Chain
 	err := r.db.Where("id = ?", chainID).First(&chain).Error
@@ -39,7 +39,7 @@ func (r *ChainRepository) GetByID(chainID string) (*models.Chain, error) {
 	return &chain, nil
 }
 
-// List retrieves all chains
+// List 获取所有链
 func (r *ChainRepository) List() ([]models.Chain, error) {
 	var chains []models.Chain
 	err := r.db.Find(&chains).Error

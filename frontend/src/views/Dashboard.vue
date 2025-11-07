@@ -4,7 +4,7 @@
       <h1>Dashboard</h1>
     </div>
 
-    <!-- Total Balance Cards for all 3 currencies -->
+    <!-- 显示所有3种货币的总余额卡片 -->
     <div class="balance-cards">
       <div class="balance-card" v-for="currency in currencies" :key="currency">
         <div class="balance-label">Total Balance</div>
@@ -15,7 +15,7 @@
       </div>
     </div>
 
-    <!-- Blockchain Balances -->
+    <!-- 区块链余额 -->
     <div class="section-card">
       <div class="section-header">
         <h2>Blockchain Balances</h2>
@@ -55,7 +55,7 @@ const { addresses, loading } = storeToRefs(walletStore)
 const { currencies, currencySymbols, selectedCurrency, exchangeRates, updateExchangeRates } =
   useCurrency()
 
-// Chain balances computed from addresses
+// 从地址计算链余额
 const chainBalances = computed(() => {
   const balanceMap = new Map()
 
@@ -83,7 +83,7 @@ const chainBalances = computed(() => {
   return Array.from(balanceMap.values()).sort((a, b) => b.balance - a.balance)
 })
 
-// Total balance in USD
+// 以USD计算的总余额
 const getTotalBalance = () => {
   return addresses.value.reduce((total, address) => {
     if (address.tokens && address.tokens.length > 0) {
@@ -93,7 +93,7 @@ const getTotalBalance = () => {
   }, 0)
 }
 
-// Format balance in selected currency
+// 将余额格式化为选定的货币
 const formatBalance = (usdValue, currency = null) => {
   const targetCurrency = currency || selectedCurrency.value
   const rate = exchangeRates.value[targetCurrency]

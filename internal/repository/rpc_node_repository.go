@@ -7,22 +7,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// RPCNodeRepository handles RPC node data access
+// RPCNodeRepository 处理 RPC 节点数据访问
 type RPCNodeRepository struct {
 	db *gorm.DB
 }
 
-// NewRPCNodeRepository creates a new RPC node repository
+// NewRPCNodeRepository 创建一个新的 RPC 节点仓库
 func NewRPCNodeRepository(db *gorm.DB) *RPCNodeRepository {
 	return &RPCNodeRepository{db: db}
 }
 
-// Create creates a new RPC node
+// Create 创建一个新的 RPC 节点
 func (r *RPCNodeRepository) Create(ctx context.Context, node *models.RPCNode) error {
 	return r.db.WithContext(ctx).Create(node).Error
 }
 
-// GetByID retrieves an RPC node by ID
+// GetByID 根据 ID 获取 RPC 节点
 func (r *RPCNodeRepository) GetByID(ctx context.Context, id uint) (*models.RPCNode, error) {
 	var node models.RPCNode
 	err := r.db.WithContext(ctx).Preload("Chain").First(&node, id).Error
@@ -32,7 +32,7 @@ func (r *RPCNodeRepository) GetByID(ctx context.Context, id uint) (*models.RPCNo
 	return &node, nil
 }
 
-// GetByChainID retrieves all RPC nodes for a specific chain
+// GetByChainID 获取特定链的所有 RPC 节点
 func (r *RPCNodeRepository) GetByChainID(ctx context.Context, chainID string) ([]models.RPCNode, error) {
 	var nodes []models.RPCNode
 	err := r.db.WithContext(ctx).
@@ -43,7 +43,7 @@ func (r *RPCNodeRepository) GetByChainID(ctx context.Context, chainID string) ([
 	return nodes, err
 }
 
-// GetEnabledByChainID retrieves all enabled RPC nodes for a specific chain
+// GetEnabledByChainID 获取特定链的所有已启用 RPC 节点
 func (r *RPCNodeRepository) GetEnabledByChainID(ctx context.Context, chainID string) ([]models.RPCNode, error) {
 	var nodes []models.RPCNode
 	err := r.db.WithContext(ctx).
@@ -54,7 +54,7 @@ func (r *RPCNodeRepository) GetEnabledByChainID(ctx context.Context, chainID str
 	return nodes, err
 }
 
-// GetAll retrieves all RPC nodes
+// GetAll 获取所有 RPC 节点
 func (r *RPCNodeRepository) GetAll(ctx context.Context) ([]models.RPCNode, error) {
 	var nodes []models.RPCNode
 	err := r.db.WithContext(ctx).
@@ -64,12 +64,12 @@ func (r *RPCNodeRepository) GetAll(ctx context.Context) ([]models.RPCNode, error
 	return nodes, err
 }
 
-// Update updates an RPC node
+// Update 更新 RPC 节点
 func (r *RPCNodeRepository) Update(ctx context.Context, node *models.RPCNode) error {
 	return r.db.WithContext(ctx).Save(node).Error
 }
 
-// UpdateConnectionStatus updates the connection status of an RPC node
+// UpdateConnectionStatus 更新 RPC 节点的连接状态
 func (r *RPCNodeRepository) UpdateConnectionStatus(ctx context.Context, id uint, isConnected bool) error {
 	now := gorm.Expr("NOW()")
 	return r.db.WithContext(ctx).Model(&models.RPCNode{}).
@@ -80,12 +80,12 @@ func (r *RPCNodeRepository) UpdateConnectionStatus(ctx context.Context, id uint,
 		}).Error
 }
 
-// Delete deletes an RPC node
+// Delete 删除 RPC 节点
 func (r *RPCNodeRepository) Delete(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&models.RPCNode{}, id).Error
 }
 
-// GetGroupedByChain retrieves all RPC nodes grouped by chain
+// GetGroupedByChain 获取按链分组的所有 RPC 节点
 func (r *RPCNodeRepository) GetGroupedByChain(ctx context.Context) (map[string][]models.RPCNode, error) {
 	var nodes []models.RPCNode
 	err := r.db.WithContext(ctx).
@@ -96,7 +96,7 @@ func (r *RPCNodeRepository) GetGroupedByChain(ctx context.Context) (map[string][
 		return nil, err
 	}
 
-	// Group by chain
+	// 按链分组
 	grouped := make(map[string][]models.RPCNode)
 	for _, node := range nodes {
 		grouped[node.ChainID] = append(grouped[node.ChainID], node)

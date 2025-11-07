@@ -9,19 +9,19 @@ import (
 	"github.com/miles/rotki-demo/internal/repository"
 )
 
-// WalletHandler handles wallet-related HTTP requests
+// WalletHandler 处理钱包相关的 HTTP 请求
 type WalletHandler struct {
 	walletRepo *repository.WalletRepository
 }
 
-// NewWalletHandler creates a new wallet handler
+// NewWalletHandler 创建一个新的钱包处理器
 func NewWalletHandler(walletRepo *repository.WalletRepository) *WalletHandler {
 	return &WalletHandler{
 		walletRepo: walletRepo,
 	}
 }
 
-// CreateWalletRequest represents the request to create a wallet
+// CreateWalletRequest 表示创建钱包的请求
 type CreateWalletRequest struct {
 	Name          string   `json:"name" binding:"required"`
 	Description   string   `json:"description"`
@@ -29,7 +29,7 @@ type CreateWalletRequest struct {
 	EnabledChains []string `json:"enabled_chains"`
 }
 
-// UpdateWalletRequest represents the request to update a wallet
+// UpdateWalletRequest 表示更新钱包的请求
 type UpdateWalletRequest struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description"`
@@ -37,7 +37,7 @@ type UpdateWalletRequest struct {
 	EnabledChains []string `json:"enabled_chains"`
 }
 
-// CreateWallet creates a new wallet
+// CreateWallet 创建一个新的钱包
 // POST /api/v1/wallets
 func (h *WalletHandler) CreateWallet(c *gin.Context) {
 	var req CreateWalletRequest
@@ -61,7 +61,7 @@ func (h *WalletHandler) CreateWallet(c *gin.Context) {
 	c.JSON(http.StatusCreated, wallet)
 }
 
-// GetWallet retrieves a wallet by ID
+// GetWallet 根据 ID 获取钱包
 // GET /api/v1/wallets/:id
 func (h *WalletHandler) GetWallet(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -79,7 +79,7 @@ func (h *WalletHandler) GetWallet(c *gin.Context) {
 	c.JSON(http.StatusOK, wallet)
 }
 
-// ListWallets retrieves all wallets
+// ListWallets 获取所有钱包
 // GET /api/v1/wallets
 func (h *WalletHandler) ListWallets(c *gin.Context) {
 	wallets, err := h.walletRepo.List()
@@ -91,7 +91,7 @@ func (h *WalletHandler) ListWallets(c *gin.Context) {
 	c.JSON(http.StatusOK, wallets)
 }
 
-// UpdateWallet updates a wallet
+// UpdateWallet 更新钱包
 // PUT /api/v1/wallets/:id
 func (h *WalletHandler) UpdateWallet(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -112,13 +112,13 @@ func (h *WalletHandler) UpdateWallet(c *gin.Context) {
 		return
 	}
 
-	// Log the update request for debugging
+	// 记录更新请求用于调试
 	c.Request.Context().Value("logger")
 
 	if req.Name != "" {
 		wallet.Name = req.Name
 	}
-	// Allow clearing description by checking if it was provided in request
+	// 通过检查请求中是否提供了描述来允许清除描述
 	wallet.Description = req.Description
 
 	if req.Tags != nil {
@@ -130,7 +130,7 @@ func (h *WalletHandler) UpdateWallet(c *gin.Context) {
 	}
 
 	if err := h.walletRepo.Update(wallet); err != nil {
-		// Log the actual error for debugging
+		// 记录实际错误用于调试
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update wallet: " + err.Error()})
 		return
 	}
@@ -138,7 +138,7 @@ func (h *WalletHandler) UpdateWallet(c *gin.Context) {
 	c.JSON(http.StatusOK, wallet)
 }
 
-// DeleteWallet deletes a wallet
+// DeleteWallet 删除钱包
 // DELETE /api/v1/wallets/:id
 func (h *WalletHandler) DeleteWallet(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)

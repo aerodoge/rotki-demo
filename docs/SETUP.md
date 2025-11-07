@@ -1,9 +1,9 @@
-# Quick Setup Guide
+# 快速设置指南
 
-## Step 1: Database Setup
+## 步骤 1：数据库设置
 
 ```bash
-# Create database
+# 创建数据库
 mysql -u root -p
 ```
 
@@ -12,84 +12,84 @@ CREATE DATABASE rotki_demo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 EXIT;
 ```
 
-## Step 2: Configuration
+## 步骤 2：配置
 
 ```bash
-# Copy and edit configuration
+# 复制并编辑配置
 cp config.yaml.example config.yaml
 ```
 
-Edit `config.yaml` and update:
-- Database credentials
-- DeBank API key (get from https://docs.cloud.debank.com)
+编辑 `config.yaml` 并更新：
+- 数据库凭据
+- DeBank API 密钥（从 https://docs.cloud.debank.com 获取）
 
-## Step 3: Backend Setup
+## 步骤 3：后端设置
 
 ```bash
-# Install Go dependencies
+# 安装 Go 依赖
 go mod download
 
-# Run the server (will auto-migrate database)
+# 运行服务器（将自动迁移数据库）
 go run cmd/server/main.go
 ```
 
-The API will be available at http://localhost:8080
+API 将在 http://localhost:8080 可用
 
-Check health: `curl http://localhost:8080/health`
+检查健康状态：`curl http://localhost:8080/health`
 
-## Step 4: Frontend Setup
+## 步骤 4：前端设置
 
 ```bash
-# Install frontend dependencies
+# 安装前端依赖
 cd frontend
 npm install
 
-# Run development server
+# 运行开发服务器
 npm run dev
 ```
 
-The frontend will be available at http://localhost:3000
+前端将在 http://localhost:3000 可用
 
-## Step 5: Test the Application
+## 步骤 5：测试应用程序
 
-1. Open http://localhost:3000 in your browser
-2. Click "Add Wallet" to create a wallet (e.g., "My Wallet")
-3. Click "Add Address" to add an Ethereum address
-   - Select the wallet you just created
-   - Enter an Ethereum address (e.g., `0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb`)
-   - Add a label (optional)
-4. The system will automatically sync the address data from DeBank
-5. Click the refresh button to manually update data
+1. 在浏览器中打开 http://localhost:3000
+2. 点击"Add Wallet"创建钱包（例如，"My Wallet"）
+3. 点击"Add Address"添加以太坊地址
+   - 选择刚刚创建的钱包
+   - 输入以太坊地址（例如，`0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb`）
+   - 添加标签（可选）
+4. 系统将自动从 DeBank 同步地址数据
+5. 点击刷新按钮手动更新数据
 
-## Common Issues
+## 常见问题
 
-### Database Connection Error
-- Check MySQL is running: `mysql -u root -p`
-- Verify credentials in `config.yaml`
-- Ensure database exists: `SHOW DATABASES;`
+### 数据库连接错误
+- 检查 MySQL 是否运行：`mysql -u root -p`
+- 验证 `config.yaml` 中的凭据
+- 确保数据库存在：`SHOW DATABASES;`
 
-### DeBank API Error
-- Verify API key is correct in `config.yaml`
-- Check rate limits aren't exceeded
-- Ensure internet connection is working
+### DeBank API 错误
+- 验证 `config.yaml` 中的 API 密钥是否正确
+- 检查速率限制是否超出
+- 确保互联网连接正常
 
-### Frontend Can't Connect to Backend
-- Verify backend is running on port 8080
-- Check CORS settings in backend
-- Verify proxy configuration in `vite.config.js`
+### 前端无法连接到后端
+- 验证后端是否在 8080 端口运行
+- 检查后端的 CORS 设置
+- 验证 `vite.config.js` 中的代理配置
 
-## API Testing with curl
+## 使用 curl 进行 API 测试
 
 ```bash
-# Create a wallet
+# 创建钱包
 curl -X POST http://localhost:8080/api/v1/wallets \
   -H "Content-Type: application/json" \
   -d '{"name":"My Wallet","description":"Main wallet"}'
 
-# List wallets
+# 列出钱包
 curl http://localhost:8080/api/v1/wallets
 
-# Add an address
+# 添加地址
 curl -X POST http://localhost:8080/api/v1/addresses \
   -H "Content-Type: application/json" \
   -d '{
@@ -99,71 +99,71 @@ curl -X POST http://localhost:8080/api/v1/addresses \
     "chain_type": "EVM"
   }'
 
-# Refresh an address
+# 刷新地址
 curl -X POST http://localhost:8080/api/v1/addresses/1/refresh
 
-# Get address with tokens
+# 获取带代币的地址
 curl http://localhost:8080/api/v1/addresses/1
 ```
 
-## Production Deployment
+## 生产部署
 
-### Build Backend
+### 构建后端
 ```bash
 make build
-# Binary will be at bin/rotki-demo
+# 二进制文件将在 bin/rotki-demo
 ```
 
-### Build Frontend
+### 构建前端
 ```bash
 cd frontend
 npm run build
-# Static files will be in frontend/dist
+# 静态文件将在 frontend/dist
 ```
 
-### Run in Production
+### 在生产环境中运行
 ```bash
-# Update config.yaml
-# - Set server.mode to "release"
-# - Set log.level to "info"
-# - Configure proper database credentials
-# - Set sync.enabled to true
+# 更新 config.yaml
+# - 将 server.mode 设置为 "release"
+# - 将 log.level 设置为 "info"
+# - 配置正确的数据库凭据
+# - 将 sync.enabled 设置为 true
 
-# Run backend
+# 运行后端
 ./bin/rotki-demo
 
-# Serve frontend with nginx or similar
+# 使用 nginx 或类似工具提供前端服务
 ```
 
-## Development Tips
+## 开发技巧
 
-### Auto-restart Backend on Changes
+### 代码更改时自动重启后端
 ```bash
-# Install air
+# 安装 air
 go install github.com/cosmtrek/air@latest
 
-# Run with air
+# 使用 air 运行
 air
 ```
 
-### Database Migrations
-The application automatically runs migrations on startup. To reset:
+### 数据库迁移
+应用程序在启动时自动运行迁移。要重置：
 ```bash
 mysql -u root -p rotki_demo < docs/database_schema.sql
 ```
 
-### View Logs
-Backend logs go to stdout by default. To write to file:
+### 查看日志
+默认情况下，后端日志输出到标准输出。要写入文件：
 ```yaml
 log:
   output: file
   file_path: logs/app.log
 ```
 
-### Adjust Sync Interval
+### 调整同步间隔
 ```yaml
 sync:
   enabled: true
-  interval: 300  # 5 minutes
+  interval: 300  # 5 分钟
   batch_size: 10
 ```

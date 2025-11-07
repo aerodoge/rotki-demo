@@ -12,19 +12,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// ChainInitializer handles initialization of chain data
+// ChainInitializer 处理链数据的初始化
 type ChainInitializer struct {
 	chainRepo *repository.ChainRepository
 }
 
-// NewChainInitializer creates a new chain initializer
+// NewChainInitializer 创建一个新的链初始化器
 func NewChainInitializer(chainRepo *repository.ChainRepository) *ChainInitializer {
 	return &ChainInitializer{
 		chainRepo: chainRepo,
 	}
 }
 
-// DeBankChainInfo represents the chain data structure from DeBank API
+// DeBankChainInfo 表示从 DeBank API 获取的链数据结构
 type DeBankChainInfo struct {
 	ID            string  `json:"id"`
 	Name          string  `json:"name"`
@@ -35,17 +35,17 @@ type DeBankChainInfo struct {
 	BlockInterval float64 `json:"block_interval"`
 }
 
-// InitializeAllChains loads all chains from chains.json and populates the database
+// InitializeAllChains 从 chains.json 文件加载所有链并填充数据库
 func (ci *ChainInitializer) InitializeAllChains(chainsFilePath string) error {
 	logger.Info("Initializing chains from file", zap.String("path", chainsFilePath))
 
-	// Read chains.json file
+	// 读取 chains.json 文件
 	data, err := os.ReadFile(chainsFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to read chains file: %w", err)
 	}
 
-	// Parse JSON
+	// 解析 JSON
 	var debankChains []DeBankChainInfo
 	if err := json.Unmarshal(data, &debankChains); err != nil {
 		return fmt.Errorf("failed to parse chains JSON: %w", err)
@@ -53,13 +53,13 @@ func (ci *ChainInitializer) InitializeAllChains(chainsFilePath string) error {
 
 	logger.Info("Found chains in file", zap.Int("count", len(debankChains)))
 
-	// Convert to our chain model and batch insert
+	// 转换为我们的链模型并批量插入
 	chains := make([]models.Chain, 0, len(debankChains))
 	for _, dc := range debankChains {
 		chain := models.Chain{
 			ID:            dc.ID,
 			Name:          dc.Name,
-			ChainType:     "EVM", // All chains in DeBank are EVM-compatible
+			ChainType:     "EVM", // DeBank 中的所有链都是 EVM 兼容的
 			LogoURL:       dc.LogoURL,
 			NativeTokenID: dc.TokenID,
 			IsActive:      true,
@@ -67,7 +67,7 @@ func (ci *ChainInitializer) InitializeAllChains(chainsFilePath string) error {
 		chains = append(chains, chain)
 	}
 
-	// Batch upsert all chains
+	// 批量更新或插入所有链
 	if err := ci.chainRepo.UpsertBatch(chains); err != nil {
 		return fmt.Errorf("failed to upsert chains: %w", err)
 	}
@@ -76,14 +76,14 @@ func (ci *ChainInitializer) InitializeAllChains(chainsFilePath string) error {
 	return nil
 }
 
-// InitializeAllChainsFromDefault loads chains from the default location
+// InitializeAllChainsFromDefault 从默认位置加载链
 func (ci *ChainInitializer) InitializeAllChainsFromDefault() error {
-	// Try multiple possible locations
+	// 尝试多个可能的位置
 	possiblePaths := []string{
 		"frontend/public/images/chains/chains.json",
 		"../frontend/public/images/chains/chains.json",
 		"../../frontend/public/images/chains/chains.json",
-		"/app/frontend/public/images/chains/chains.json", // Docker path
+		"/app/frontend/public/images/chains/chains.json", // Docker 路径
 	}
 
 	for _, path := range possiblePaths {

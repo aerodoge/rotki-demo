@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { walletsAPI, addressesAPI } from '../api/client'
 
-// Helper function to filter spam tokens
+// 过滤垃圾代币的辅助函数
 const filterSpamTokens = (tokens) => {
   if (!tokens || !Array.isArray(tokens)) return []
 
@@ -25,14 +25,14 @@ const filterSpamTokens = (tokens) => {
     const symbolLower = (token.symbol || '').toLowerCase()
     const nameLower = (token.name || '').toLowerCase()
 
-    // Check for spam keywords
+    // 检查垃圾关键词
     for (const keyword of spamKeywords) {
       if (symbolLower.includes(keyword) || nameLower.includes(keyword)) {
         return false
       }
     }
 
-    // Check for suspicious patterns in tokens with $0 value
+    // 检查价值为$0的代币中的可疑模式
     if (token.price === 0 && token.usd_value === 0) {
       if (symbolLower.includes('✅') || nameLower.includes('✅')) {
         return false
@@ -96,7 +96,7 @@ export const useWalletStore = defineStore('wallet', {
       this.error = null
       try {
         const response = await addressesAPI.list(walletId)
-        // Filter spam tokens from all addresses
+        // 从所有地址过滤垃圾代币
         this.addresses = response.data.map((address) => ({
           ...address,
           tokens: filterSpamTokens(address.tokens)

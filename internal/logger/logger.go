@@ -9,7 +9,7 @@ import (
 
 var log *zap.Logger
 
-// InitLogger initializes the logger
+// InitLogger 初始化日志记录器
 func InitLogger(cfg *config.LogConfig) error {
 	var zapConfig zap.Config
 
@@ -20,7 +20,7 @@ func InitLogger(cfg *config.LogConfig) error {
 		zapConfig.OutputPaths = []string{cfg.FilePath}
 	}
 
-	// Set log level
+	// 设置日志级别
 	level := zapcore.InfoLevel
 	switch cfg.Level {
 	case "debug":
@@ -43,42 +43,42 @@ func InitLogger(cfg *config.LogConfig) error {
 	return nil
 }
 
-// GetLogger returns the logger instance
+// GetLogger 返回日志记录器实例
 func GetLogger() *zap.Logger {
 	if log == nil {
-		// Fallback to a default logger if not initialized
+		// 如果未初始化，则回退到默认日志记录器
 		log, _ = zap.NewDevelopment()
 	}
 	return log
 }
 
-// Info logs an info message
+// Info 记录信息消息
 func Info(msg string, fields ...zap.Field) {
 	GetLogger().Info(msg, fields...)
 }
 
-// Debug logs a debug message
+// Debug 记录调试消息
 func Debug(msg string, fields ...zap.Field) {
 	GetLogger().Debug(msg, fields...)
 }
 
-// Error logs an error message
+// Error 记录错误消息
 func Error(msg string, fields ...zap.Field) {
 	GetLogger().Error(msg, fields...)
 }
 
-// Warn logs a warning message
+// Warn 记录警告消息
 func Warn(msg string, fields ...zap.Field) {
 	GetLogger().Warn(msg, fields...)
 }
 
-// Fatal logs a fatal message and exits
+// Fatal 记录致命消息并退出
 func Fatal(msg string, fields ...zap.Field) {
 	GetLogger().Fatal(msg, fields...)
 	os.Exit(1)
 }
 
-// Sync flushes any buffered log entries
+// Sync 刷新任何缓冲的日志条目
 func Sync() {
 	if log != nil {
 		_ = log.Sync()

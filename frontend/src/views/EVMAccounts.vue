@@ -77,7 +77,7 @@
               </tr>
 
               <template v-if="expandedWallets[wallet.id]">
-                <!-- Address list header -->
+                <!-- 地址列表标题 -->
                 <tr v-if="getAddressesByWallet(wallet.id).length > 0" class="address-header-row">
                   <th class="address-header-cell">Account</th>
                   <th class="address-header-cell">Chains</th>
@@ -179,7 +179,7 @@
                     </td>
                   </tr>
 
-                  <!-- Expanded token details for address -->
+                  <!-- 展开的地址代币详情 -->
                   <template v-if="expandedAddresses[address.id]">
                     <tr v-if="!address.tokens || address.tokens.length === 0" class="no-tokens-row">
                       <td colspan="6">
@@ -188,7 +188,7 @@
                         </div>
                       </td>
                     </tr>
-                    <!-- View Tabs for address tokens -->
+                    <!-- 地址代币的视图标签页 -->
                     <tr v-if="address.tokens && address.tokens.length > 0" class="tabs-row">
                       <td colspan="6">
                         <div class="view-tabs">
@@ -214,9 +214,9 @@
                       </td>
                     </tr>
 
-                    <!-- Aggregated view: show all tokens -->
+                    <!-- 聚合视图：显示所有代币 -->
                     <template v-if="addressViewMode[address.id] === 'aggregated'">
-                      <!-- Token details header -->
+                      <!-- 代币详情标题 -->
                       <tr
                         v-if="address.tokens && address.tokens.length > 0"
                         class="token-header-row"
@@ -237,7 +237,7 @@
                         :key="token.id"
                         :token="token"
                       />
-                      <!-- Pagination controls -->
+                      <!-- 分页控制 -->
                       <tr v-if="address.tokens && address.tokens.length > 0" class="pagination-row">
                         <td colspan="6">
                           <div class="pagination-controls">
@@ -302,7 +302,7 @@
                       </tr>
                     </template>
 
-                    <!-- Per Chain view: show tokens grouped by chain -->
+                    <!-- 按链视图：显示按链分组的代币 -->
                     <template v-if="addressViewMode[address.id] === 'perChain'">
                       <template
                         v-for="chain in getAddressChainGroups(address.id)"
@@ -368,7 +368,7 @@
                           </td>
                         </tr>
                         <template v-if="expandedAddressChains[`${address.id}_${chain.chainId}`]">
-                          <!-- Chain token header -->
+                          <!-- 链代币标题 -->
                           <tr class="token-header-row">
                             <td colspan="6">
                               <div class="token-detail token-header">
@@ -389,7 +389,7 @@
                             :key="token.id"
                             :token="token"
                           />
-                          <!-- Chain pagination -->
+                          <!-- 链分页 -->
                           <tr class="pagination-row">
                             <td colspan="6">
                               <div class="pagination-controls">
@@ -489,7 +489,7 @@
       </div>
     </div>
 
-    <!-- Add Wallet Modal -->
+    <!-- 添加钱包模态框 -->
     <div v-if="showAddWalletModal" class="modal-overlay" @click="showAddWalletModal = false">
       <div class="modal" @click.stop>
         <h2>Add Wallet</h2>
@@ -559,7 +559,7 @@
       </div>
     </div>
 
-    <!-- Edit Wallet Modal -->
+    <!-- 编辑钱包模态框 -->
     <div
       v-if="showEditWalletModal && editingWallet"
       class="modal-overlay"
@@ -636,7 +636,7 @@
       </div>
     </div>
 
-    <!-- Add Address Modal -->
+    <!-- 添加地址模态框 -->
     <div v-if="showAddAddressModal" class="modal-overlay" @click="showAddAddressModal = false">
       <div class="modal" @click.stop>
         <h2>Add Address</h2>
@@ -696,7 +696,7 @@
       </div>
     </div>
 
-    <!-- Edit Address Modal -->
+    <!-- 编辑地址模态框 -->
     <div
       v-if="showEditAddressModal && editingAddress"
       class="modal-overlay"
@@ -803,20 +803,20 @@ const newAddress = ref({
   chain_type: 'EVM'
 })
 
-// Tag input state
+// 标签输入状态
 const newWalletTagInput = ref('')
 const editWalletTagInput = ref('')
 const newAddressTagInput = ref('')
 const editAddressTagInput = ref('')
 
 onMounted(async () => {
-  // Restore saved currency preference
+  // 恢复保存的货币偏好设置
   restoreSavedCurrency()
 
   await walletStore.fetchWallets()
   await walletStore.fetchAddresses()
 
-  // Fetch available chains
+  // 获取可用的链
   try {
     const response = await chainsAPI.list()
     availableChains.value = response.data
@@ -825,10 +825,10 @@ onMounted(async () => {
     console.error('Failed to fetch chains:', error)
   }
 
-  // Update exchange rates from token data
+  // 从代币数据更新汇率
   updateExchangeRates(addresses.value)
 
-  // Debug: Check what logo URLs we have
+  // 调试：检查我们有哪些logo URL
   console.log('Addresses with tokens:', addresses.value)
   addresses.value.forEach((addr) => {
     if (addr.tokens && addr.tokens.length > 0) {
@@ -856,12 +856,12 @@ const toggleAddress = (addressId) => {
   expandedAddresses[addressId] = !expandedAddresses[addressId]
   console.log('After:', expandedAddresses)
 
-  // Initialize view mode for this address (default to aggregated)
+  // 初始化此地址的视图模式（默认为聚合视图）
   if (!addressViewMode[addressId]) {
     addressViewMode[addressId] = 'aggregated'
   }
 
-  // Initialize pagination for this address if not exists
+  // 如果不存在，初始化此地址的分页
   if (!tokenPagination[addressId]) {
     tokenPagination[addressId] = {
       currentPage: 1,
@@ -870,12 +870,12 @@ const toggleAddress = (addressId) => {
   }
 }
 
-// Set view mode for a specific address
+// 设置特定地址的视图模式
 const setAddressViewMode = (addressId, mode) => {
   addressViewMode[addressId] = mode
 }
 
-// Pagination helper functions
+// 分页辅助函数
 const initPagination = (addressId) => {
   if (!tokenPagination[addressId]) {
     tokenPagination[addressId] = {
@@ -892,13 +892,13 @@ const getPaginatedTokens = (addressId) => {
   initPagination(addressId)
   const pagination = tokenPagination[addressId]
 
-  // Sort tokens by value in selected currency (descending order)
+  // 按选定货币的价值对代币进行排序（降序）
   const sortedTokens = [...address.tokens].sort((a, b) => {
-    // Get USD value first
+    // 首先获取USD价值
     const usdValueA = a.usd_value || 0
     const usdValueB = b.usd_value || 0
 
-    // Convert to selected currency using exchange rates
+    // 使用汇率转换为选定的货币
     const rate = exchangeRates.value[selectedCurrency.value] || 1
     const valueA = rate === 0 ? usdValueA : usdValueA / rate
     const valueB = rate === 0 ? usdValueB : usdValueB / rate
@@ -976,18 +976,18 @@ const goToLastPage = (addressId) => {
 
 const onPageSizeChange = (addressId) => {
   initPagination(addressId)
-  // Reset to first page when page size changes
+  // 页面大小改变时重置到第一页
   tokenPagination[addressId].currentPage = 1
 }
 
-// Address chain grouping functions
+// 地址链分组函数
 const getAddressChainGroups = (addressId) => {
   const address = addresses.value.find((a) => a.id === addressId)
   if (!address || !address.tokens) return []
 
   const chainMap = new Map()
 
-  // Collect tokens by chain for this address
+  // 为此地址按链收集代币
   address.tokens.forEach((token) => {
     if (!chainMap.has(token.chain_id)) {
       const chainInfo = availableChains.value.find((c) => c.id === token.chain_id)
@@ -1002,7 +1002,7 @@ const getAddressChainGroups = (addressId) => {
     chainMap.get(token.chain_id).tokens.push(token)
   })
 
-  // Calculate total value and sort tokens
+  // 计算总价值并对代币进行排序
   const chains = Array.from(chainMap.values()).map((chain) => {
     const sortedTokens = [...chain.tokens].sort((a, b) => {
       const usdValueA = a.usd_value || 0
@@ -1018,7 +1018,7 @@ const getAddressChainGroups = (addressId) => {
     return chain
   })
 
-  // Sort chains by total value (descending)
+  // 按总价值对链进行排序（降序）
   return chains.sort((a, b) => b.totalValue - a.totalValue)
 }
 
@@ -1026,7 +1026,7 @@ const toggleAddressChain = (addressId, chainId) => {
   const key = `${addressId}_${chainId}`
   expandedAddressChains[key] = !expandedAddressChains[key]
 
-  // Initialize pagination
+  // 初始化分页
   if (!addressChainPagination[key]) {
     addressChainPagination[key] = {
       currentPage: 1,
@@ -1035,7 +1035,7 @@ const toggleAddressChain = (addressId, chainId) => {
   }
 }
 
-// Address chain pagination functions
+// 地址链分页函数
 const initAddressChainPagination = (addressId, chainId) => {
   const key = `${addressId}_${chainId}`
   if (!addressChainPagination[key]) {
@@ -1142,16 +1142,16 @@ const onAddressChainPageSizeChange = (addressId, chainId) => {
   addressChainPagination[key].currentPage = 1
 }
 
-// Chain grouping functions
+// 链分组函数
 const getChainGroups = () => {
   const chainMap = new Map()
 
-  // Collect all tokens from all addresses
+  // 从所有地址收集所有代币
   addresses.value.forEach((address) => {
     if (address.tokens && address.tokens.length > 0) {
       address.tokens.forEach((token) => {
         if (!chainMap.has(token.chain_id)) {
-          // Find chain info from available chains
+          // 从可用链中查找链信息
           const chainInfo = availableChains.value.find((c) => c.id === token.chain_id)
           chainMap.set(token.chain_id, {
             chainId: token.chain_id,
@@ -1166,9 +1166,9 @@ const getChainGroups = () => {
     }
   })
 
-  // Calculate total value for each chain and sort tokens by value
+  // 计算每条链的总价值并按价值对代币进行排序
   const chains = Array.from(chainMap.values()).map((chain) => {
-    // Sort tokens by value in selected currency (descending)
+    // 按选定货币的价值对代币进行排序（降序）
     const sortedTokens = [...chain.tokens].sort((a, b) => {
       const usdValueA = a.usd_value || 0
       const usdValueB = b.usd_value || 0
@@ -1183,14 +1183,14 @@ const getChainGroups = () => {
     return chain
   })
 
-  // Sort chains by total value (descending)
+  // 按总价值对链进行排序（降序）
   return chains.sort((a, b) => b.totalValue - a.totalValue)
 }
 
 const toggleChain = (chainId) => {
   expandedChains[chainId] = !expandedChains[chainId]
 
-  // Initialize pagination for this chain if not exists
+  // 如果不存在，初始化此链的分页
   if (!chainPagination[chainId]) {
     chainPagination[chainId] = {
       currentPage: 1,
@@ -1200,7 +1200,7 @@ const toggleChain = (chainId) => {
 }
 
 const refreshChain = async (chainId) => {
-  // Refresh all addresses that have tokens on this chain
+  // 刷新该链上拥有代币的所有地址
   const addressesToRefresh = addresses.value.filter(
     (addr) => addr.tokens && addr.tokens.some((token) => token.chain_id === chainId)
   )
@@ -1210,7 +1210,7 @@ const refreshChain = async (chainId) => {
   }
 }
 
-// Chain pagination functions
+// 链分页函数
 const initChainPagination = (chainId) => {
   if (!chainPagination[chainId]) {
     chainPagination[chainId] = {
@@ -1300,7 +1300,7 @@ const goToChainLastPage = (chainId) => {
 
 const onChainPageSizeChange = (chainId) => {
   initChainPagination(chainId)
-  // Reset to first page when page size changes
+  // 页面大小改变时重置到第一页
   chainPagination[chainId].currentPage = 1
 }
 
@@ -1320,12 +1320,12 @@ const getAddressValue = (address) => {
   return address.tokens?.reduce((sum, token) => sum + (token.usd_value || 0), 0) || 0
 }
 
-// Handle chain logo loading errors
+// 处理链logo加载错误
 const handleChainImageError = (chainId) => {
   failedChainImages[chainId] = true
 }
 
-// Get chain initial for placeholder
+// 获取链的首字母作为占位符
 const getChainInitial = (chain) => {
   const name = chain.name || chain.id || '?'
   return name.charAt(0).toUpperCase()
@@ -1366,7 +1366,7 @@ const formatAddress = (address) => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
-// Currency functions are now in useCurrency composable
+// 货币函数现在在useCurrency组合式函数中
 
 const handleAddWallet = async () => {
   try {
@@ -1402,7 +1402,7 @@ const handleEditWallet = async () => {
     showEditWalletModal.value = false
     editingWallet.value = null
     editWalletTagInput.value = ''
-    // Refresh data after update
+    // 更新后刷新数据
     await walletStore.fetchWallets()
     await walletStore.fetchAddresses()
   } catch (error) {
@@ -1417,11 +1417,11 @@ const handleAddAddress = async () => {
     newAddress.value = { wallet_id: '', address: '', label: '', tags: [], chain_type: 'EVM' }
     newAddressTagInput.value = ''
 
-    // Show success message
+    // 显示成功消息
     alert('Address added! Syncing data in background...')
 
-    // Refresh addresses to get updated data with tokens
-    // Wait a bit for background sync to complete
+    // 刷新地址以获取包含代币的最新数据
+    // 等待后台同步完成
     setTimeout(async () => {
       await walletStore.fetchAddresses()
     }, 2000)
@@ -1431,7 +1431,7 @@ const handleAddAddress = async () => {
 }
 
 const handleImageError = (event, tokenId) => {
-  // Mark this image as failed so Vue will show the fallback
+  // 将此图像标记为失败，以便Vue显示后备内容
   console.log('Image failed to load:', {
     tokenId,
     src: event.target.src,
@@ -1503,7 +1503,7 @@ const deleteAddress = async (addressId) => {
   }
 }
 
-// Tag management functions
+// 标签管理函数
 const addNewWalletTag = () => {
   const tag = newWalletTagInput.value.trim()
   if (tag && !newWallet.value.tags.includes(tag)) {
@@ -1579,7 +1579,7 @@ const removeEditAddressTag = (index) => {
   align-items: center;
 }
 
-/* Currency styles moved to CurrencySelector component */
+/* 货币样式已移至CurrencySelector组件 */
 
 .actions-bar {
   display: flex;
@@ -1593,7 +1593,7 @@ const removeEditAddressTag = (index) => {
   gap: 12px;
 }
 
-/* View Tabs */
+/* 视图标签页 */
 .view-tabs {
   display: flex;
   gap: 8px;
@@ -1846,7 +1846,7 @@ const removeEditAddressTag = (index) => {
   background: #f3f4f6;
 }
 
-/* Token detail styles moved to TokenDetailRow component */
+/* 代币详情样式已移至TokenDetailRow组件 */
 
 .token-header-row {
   background: #f3f4f6;
@@ -2300,7 +2300,7 @@ const removeEditAddressTag = (index) => {
   margin-right: 8px;
 }
 
-/* Pagination styles */
+/* 分页样式 */
 .pagination-row {
   background: #fafafa;
   border-top: 1px solid #e5e7eb;

@@ -13,14 +13,14 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 )
 
-// DB is the global database instance
+// DB 是全局数据库实例
 var DB *gorm.DB
 
-// InitDatabase initializes the database connection
+// InitDatabase 初始化数据库连接
 func InitDatabase(cfg *config.DatabaseConfig) error {
 	dsn := cfg.GetDSN()
 
-	// Configure GORM logger
+	// 配置 GORM 日志记录器
 	logLevel := gormlogger.Info
 	gormLog := gormlogger.New(
 		&gormLoggerAdapter{},
@@ -32,7 +32,7 @@ func InitDatabase(cfg *config.DatabaseConfig) error {
 		},
 	)
 
-	// Open database connection
+	// 打开数据库连接
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: gormLog,
 	})
@@ -40,13 +40,13 @@ func InitDatabase(cfg *config.DatabaseConfig) error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Get underlying sql.DB
+	// 获取底层 sql.DB
 	sqlDB, err := db.DB()
 	if err != nil {
 		return fmt.Errorf("failed to get database instance: %w", err)
 	}
 
-	// Set connection pool settings
+	// 设置连接池设置
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
 	sqlDB.SetConnMaxLifetime(time.Hour)
@@ -61,7 +61,7 @@ func InitDatabase(cfg *config.DatabaseConfig) error {
 	return nil
 }
 
-// AutoMigrate runs database migrations
+// AutoMigrate 运行数据库迁移
 func AutoMigrate() error {
 	if DB == nil {
 		return fmt.Errorf("database not initialized")
@@ -85,12 +85,12 @@ func AutoMigrate() error {
 	return nil
 }
 
-// GetDB returns the database instance
+// GetDB 返回数据库实例
 func GetDB() *gorm.DB {
 	return DB
 }
 
-// gormLoggerAdapter adapts zap logger to GORM logger interface
+// gormLoggerAdapter 将 zap 日志记录器适配到 GORM 日志记录器接口
 type gormLoggerAdapter struct{}
 
 func (l *gormLoggerAdapter) Printf(format string, args ...interface{}) {

@@ -1,4 +1,4 @@
--- Add RPC nodes table
+-- 添加 RPC 节点表
 CREATE TABLE IF NOT EXISTS `rpc_nodes` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `chain_id` varchar(50) NOT NULL,
@@ -17,6 +17,6 @@ CREATE TABLE IF NOT EXISTS `rpc_nodes` (
   CONSTRAINT `fk_rpc_nodes_chain` FOREIGN KEY (`chain_id`) REFERENCES `chains` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Add indexes for better query performance
+-- 添加索引以提高查询性能
 CREATE INDEX `idx_rpc_nodes_enabled` ON `rpc_nodes` (`is_enabled`);
 CREATE INDEX `idx_rpc_nodes_chain_enabled` ON `rpc_nodes` (`chain_id`, `is_enabled`);

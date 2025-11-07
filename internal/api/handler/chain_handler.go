@@ -7,19 +7,19 @@ import (
 	"github.com/miles/rotki-demo/internal/repository"
 )
 
-// ChainHandler handles chain-related HTTP requests
+// ChainHandler 处理链相关的 HTTP 请求
 type ChainHandler struct {
 	chainRepo *repository.ChainRepository
 }
 
-// NewChainHandler creates a new chain handler
+// NewChainHandler 创建一个新的链处理器
 func NewChainHandler(chainRepo *repository.ChainRepository) *ChainHandler {
 	return &ChainHandler{
 		chainRepo: chainRepo,
 	}
 }
 
-// ListChains retrieves all chains
+// ListChains 获取所有链
 // GET /api/v1/chains
 func (h *ChainHandler) ListChains(c *gin.Context) {
 	chains, err := h.chainRepo.List()

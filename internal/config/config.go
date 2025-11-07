@@ -2,11 +2,12 @@ package config
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
-// Config represents the application configuration
+// Config 表示应用程序配置
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
@@ -65,13 +66,13 @@ type LogConfig struct {
 	FilePath string `mapstructure:"file_path"`
 }
 
-// LoadConfig loads configuration from file
+// LoadConfig 从文件加载配置
 func LoadConfig(configPath string) (*Config, error) {
 	viper.SetConfigFile(configPath)
 	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
 
-	// Set defaults
+	// 设置默认值
 	viper.SetDefault("server.port", 8080)
 	viper.SetDefault("server.mode", "debug")
 	viper.SetDefault("database.charset", "utf8mb4")
@@ -98,7 +99,7 @@ func LoadConfig(configPath string) (*Config, error) {
 	return &config, nil
 }
 
-// GetDSN returns the database connection string
+// GetDSN 返回数据库连接字符串
 func (c *DatabaseConfig) GetDSN() string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
 		c.Username,
@@ -110,22 +111,22 @@ func (c *DatabaseConfig) GetDSN() string {
 	)
 }
 
-// GetRedisAddr returns the Redis address
+// GetAddr 返回 Redis 地址
 func (c *RedisConfig) GetAddr() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
-// GetCacheTTL returns cache TTL as duration
+// GetCacheTTL 以持续时间形式返回缓存 TTL
 func (c *RedisConfig) GetCacheTTL() time.Duration {
 	return time.Duration(c.CacheTTL) * time.Second
 }
 
-// GetTimeout returns timeout as duration
+// GetTimeout 以持续时间形式返回超时
 func (c *DeBankConfig) GetTimeout() time.Duration {
 	return time.Duration(c.Timeout) * time.Second
 }
 
-// GetSyncInterval returns sync interval as duration
+// GetSyncInterval 以持续时间形式返回同步间隔
 func (c *SyncConfig) GetSyncInterval() time.Duration {
 	return time.Duration(c.Interval) * time.Second
 }

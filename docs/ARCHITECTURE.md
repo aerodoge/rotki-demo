@@ -1,42 +1,42 @@
-# Architecture Documentation
+# 架构文档
 
-## System Overview
+## 系统概述
 
-Rotki Demo is a full-stack DeFi asset management application that tracks cryptocurrency holdings across multiple blockchain addresses. It uses DeBank API as the data source but is designed with an abstraction layer to easily switch to other data providers.
+Rotki Demo 是一个全栈 DeFi 资产管理应用程序，用于跟踪多个区块链地址的加密货币持仓。它使用 DeBank API 作为数据源，但设计了抽象层，可以轻松切换到其他数据提供商。
 
-## Architecture Diagram
+## 架构图
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                     Frontend (Vue.js)                    │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │   Sidebar    │  │ EVM Accounts │  │   Modals     │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘ │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │           Pinia Store (State Management)         │  │
-│  └─────────────────────────────────────────────────┘  │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │              Axios (HTTP Client)                 │  │
-│  └─────────────────────────────────────────────────┘  │
+│                     Frontend (Vue.js)                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
+│  │   Sidebar    │  │ EVM Accounts │  │   Modals     │   │
+│  └──────────────┘  └──────────────┘  └──────────────┘   │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │           Pinia Store (State Management)        │    │
+│  └─────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │              Axios (HTTP Client)                │    │
+│  └─────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────┘
                            │
                            │ HTTP/JSON
                            ▼
 ┌─────────────────────────────────────────────────────────┐
-│                    Backend (Go/Gin)                      │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │              HTTP Router (Gin)                   │  │
-│  │    /api/v1/wallets  /api/v1/addresses           │  │
-│  └─────────────────────────────────────────────────┘  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │   Handlers   │  │   Services   │  │ Repositories │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘ │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │         Data Provider Interface                  │  │
-│  │  ┌────────────────┐   ┌─────────────────────┐  │  │
-│  │  │ DeBank Client  │   │  Future: Custom RPC │  │  │
-│  │  └────────────────┘   └─────────────────────┘  │  │
-│  └─────────────────────────────────────────────────┘  │
+│                    Backend (Go/Gin)                     │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │              HTTP Router (Gin)                  │    │
+│  │    /api/v1/wallets  /api/v1/addresses           │    │
+│  └─────────────────────────────────────────────────┘    │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
+│  │   Handlers   │  │   Services   │  │ Repositories │   │
+│  └──────────────┘  └──────────────┘  └──────────────┘   │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │         Data Provider Interface                 │    │
+│  │  ┌────────────────┐   ┌─────────────────────┐   │    │
+│  │  │ DeBank Client  │   │  Future: Custom RPC │   │    │
+│  │  └────────────────┘   └─────────────────────┘   │    │
+│  └─────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────┘
            │                           │
            │                           │
@@ -47,64 +47,64 @@ Rotki Demo is a full-stack DeFi asset management application that tracks cryptoc
     └────────────┘           └──────────────────┘
 ```
 
-## Backend Architecture
+## 后端架构
 
-### Layer Breakdown
+### 层级分解
 
-#### 1. API Layer (`internal/api`)
-- **Handler**: Request/response handling, validation
-- **Router**: Route definitions and middleware setup
-- **Responsibilities**: HTTP concerns only
+#### 1. API 层（`internal/api`）
+- **Handler**：请求/响应处理、验证
+- **Router**：路由定义和中间件设置
+- **职责**：仅处理 HTTP 相关事务
 
-#### 2. Service Layer (`internal/service`)
-- **SyncService**: Background synchronization logic
-- **Business Logic**: Orchestrates operations across multiple repositories
-- **Transaction Management**: Ensures data consistency
+#### 2. 服务层（`internal/service`）
+- **SyncService**：后台同步逻辑
+- **业务逻辑**：跨多个仓储协调操作
+- **事务管理**：确保数据一致性
 
-#### 3. Repository Layer (`internal/repository`)
-- **WalletRepository**: Wallet CRUD operations
-- **AddressRepository**: Address CRUD operations
-- **TokenRepository**: Token data management
-- **Pure Data Access**: No business logic
+#### 3. 仓储层（`internal/repository`）
+- **WalletRepository**：钱包 CRUD 操作
+- **AddressRepository**：地址 CRUD 操作
+- **TokenRepository**：代币数据管理
+- **纯数据访问**：无业务逻辑
 
-#### 4. Provider Layer (`internal/provider`)
-- **Interface Definition**: DataProvider interface
-- **DeBank Implementation**: Current data source
-- **Extensibility**: Easy to add new providers
+#### 4. 提供商层（`internal/provider`）
+- **接口定义**：DataProvider 接口
+- **DeBank 实现**：当前数据源
+- **可扩展性**：易于添加新提供商
 
-### Key Design Patterns
+### 核心设计模式
 
-#### Provider Pattern
+#### 提供商模式
 ```go
 type DataProvider interface {
     GetTotalBalance(ctx context.Context, address string) (*TotalBalanceResponse, error)
     GetTokenList(ctx context.Context, address string, chainIDs []string) ([]TokenInfo, error)
-    // ... other methods
+    // ... 其他方法
 }
 ```
 
-**Benefits:**
-- Decouples data source from business logic
-- Easy to switch between DeBank, custom RPC, or other APIs
-- Testable with mock providers
+**优势：**
+- 将数据源与业务逻辑解耦
+- 易于在 DeBank、自定义 RPC 或其他 API 之间切换
+- 可使用模拟提供商进行测试
 
-#### Repository Pattern
+#### 仓储模式
 ```go
 type WalletRepository struct {
     db *gorm.DB
 }
 
 func (r *WalletRepository) GetByID(id uint) (*models.Wallet, error) {
-    // Database access only
+    // 仅数据库访问
 }
 ```
 
-**Benefits:**
-- Separates data access from business logic
-- Easier to test
-- Can switch database implementations
+**优势：**
+- 将数据访问与业务逻辑分离
+- 更易于测试
+- 可以切换数据库实现
 
-#### Service Pattern
+#### 服务模式
 ```go
 type SyncService struct {
     dataProvider provider.DataProvider
@@ -113,25 +113,25 @@ type SyncService struct {
 }
 ```
 
-**Benefits:**
-- Encapsulates complex business logic
-- Coordinates between multiple repositories and providers
-- Manages transactions and error handling
+**优势：**
+- 封装复杂的业务逻辑
+- 协调多个仓储和提供商
+- 管理事务和错误处理
 
-## Frontend Architecture
+## 前端架构
 
-### Component Structure
+### 组件结构
 
 ```
 App.vue
-├── Sidebar.vue (Navigation)
-└── EVMAccounts.vue (Main view)
-    ├── Wallet rows (expandable)
-    └── Address rows (nested)
-        └── Token displays
+├── Sidebar.vue（导航）
+└── EVMAccounts.vue（主视图）
+    ├── 钱包行（可展开）
+    └── 地址行（嵌套）
+        └── 代币显示
 ```
 
-### State Management (Pinia)
+### 状态管理（Pinia）
 
 ```javascript
 walletStore
@@ -151,68 +151,68 @@ walletStore
     └── ...
 ```
 
-## Data Flow
+## 数据流
 
-### Adding a New Address
+### 添加新地址
 
-1. **User Action**: Clicks "Add Address" button
-2. **Frontend**: Opens modal, user fills form
-3. **API Call**: POST /api/v1/addresses
-4. **Backend Handler**: Validates request
-5. **Repository**: Inserts address into database
-6. **Background Trigger**: Initiates sync for new address
-7. **Provider**: Calls DeBank API
-8. **Data Storage**: Stores tokens in database
-9. **Response**: Returns created address to frontend
-10. **UI Update**: Displays new address with tokens
+1. **用户操作**：点击"Add Address"按钮
+2. **前端**：打开模态框，用户填写表单
+3. **API 调用**：POST /api/v1/addresses
+4. **后端处理器**：验证请求
+5. **仓储**：将地址插入数据库
+6. **后台触发**：启动新地址的同步
+7. **提供商**：调用 DeBank API
+8. **数据存储**：将代币存储在数据库中
+9. **响应**：将创建的地址返回给前端
+10. **UI 更新**：显示带有代币的新地址
 
-### Automatic Sync Process
+### 自动同步流程
 
 ```
 SyncService.Start()
     │
-    ├─> Ticker (every 5 minutes)
+    ├─> Ticker（每 5 分钟）
     │
     ├─> GetAllNeedingSync()
     │     │
-    │     └─> Query addresses where last_synced_at > interval
+    │     └─> 查询 last_synced_at > interval 的地址
     │
     ├─> ProcessInBatches()
     │     │
-    │     └─> Process 10 addresses concurrently
+    │     └─> 并发处理 10 个地址
     │
-    └─> For each address:
+    └─> 对于每个地址：
           │
-          ├─> GetTokenList() from Provider
+          ├─> GetTokenList() 从提供商获取
           │
-          ├─> UpsertBatch() to database
+          ├─> UpsertBatch() 到数据库
           │
           └─> UpdateLastSynced()
 ```
 
-## Database Schema
+## 数据库模式
 
-### Core Tables
+### 核心表
 
 **wallets**
-- Stores wallet metadata
-- One-to-many with addresses
+- 存储钱包元数据
+- 与地址一对多关系
 
 **addresses**
-- Stores blockchain addresses
-- Links to wallet
-- Tracks last sync time
+- 存储区块链地址
+- 链接到钱包
+- 跟踪最后同步时间
 
 **tokens**
-- Stores token balances
-- Links to address and chain
-- Updated on each sync
+- 存储代币余额
+- 链接到地址和链
+- 每次同步时更新
 
 **asset_snapshots**
-- Historical snapshots
-- For tracking balance changes over time
+- 历史快照
+- 用于跟踪余额随时间的变化
 
-### Relationships
+### 关系
 
 ```
 wallets (1) ──< (N) addresses (1) ──< (N) tokens
@@ -220,167 +220,167 @@ wallets (1) ──< (N) addresses (1) ──< (N) tokens
                                   └──< (N) asset_snapshots
 ```
 
-## Rate Limiting Strategy
+## 速率限制策略
 
-### Token Bucket Algorithm
+### 令牌桶算法
 
 ```go
 limiter := rate.NewLimiter(
-    rate.Limit(5),  // 5 requests per second
-    10,             // Burst of 10
+    rate.Limit(5),  // 每秒 5 个请求
+    10,             // 突发 10 个
 )
 
-// Before each request
+// 在每个请求之前
 limiter.Wait(ctx)
 ```
 
-### Benefits
-- Prevents API throttling
-- Smooth traffic distribution
-- Configurable per environment
+### 优势
+- 防止 API 限流
+- 平滑流量分布
+- 可根据环境配置
 
-### Cost Optimization
+### 成本优化
 
-1. **Caching**: 60s TTL on responses
-2. **Batch Endpoints**: Use `all_token_list` instead of per-chain calls
-3. **Periodic Sync**: Configurable interval (default 5 minutes)
-4. **On-demand Refresh**: Only when user requests
+1. **缓存**：响应的 60 秒 TTL
+2. **批量端点**：使用 `all_token_list` 而不是每链调用
+3. **定期同步**：可配置间隔（默认 5 分钟）
+4. **按需刷新**：仅在用户请求时
 
-## Scalability Considerations
+## 可扩展性考虑
 
-### Current Limitations
-- Single server instance
-- In-memory rate limiting
-- No distributed caching
+### 当前限制
+- 单服务器实例
+- 内存中的速率限制
+- 无分布式缓存
 
-### Future Improvements
+### 未来改进
 
-1. **Horizontal Scaling**
-   - Add Redis for distributed rate limiting
-   - Add Redis for caching
-   - Load balancer for multiple instances
+1. **水平扩展**
+   - 添加 Redis 用于分布式速率限制
+   - 添加 Redis 用于缓存
+   - 负载均衡器用于多实例
 
-2. **Database Optimization**
-   - Read replicas for queries
-   - Partitioning for large tables
-   - Materialized views for aggregations
+2. **数据库优化**
+   - 读副本用于查询
+   - 大表分区
+   - 物化视图用于聚合
 
-3. **Async Processing**
-   - Message queue (RabbitMQ/Kafka) for sync jobs
-   - Worker pools for parallel processing
-   - Job status tracking
+3. **异步处理**
+   - 消息队列（RabbitMQ/Kafka）用于同步作业
+   - 工作池用于并行处理
+   - 作业状态跟踪
 
-## Security Considerations
+## 安全考虑
 
-### Current Implementation
-- Input validation on all endpoints
-- GORM parameterized queries (SQL injection protection)
-- CORS middleware with configurable origins
-- API keys stored in config (not in code)
+### 当前实现
+- 所有端点的输入验证
+- GORM 参数化查询（SQL 注入保护）
+- 带可配置源的 CORS 中间件
+- API 密钥存储在配置中（不在代码中）
 
-### Production Requirements
-- [ ] Add authentication (JWT)
-- [ ] Rate limiting per user
-- [ ] Request signing for API calls
-- [ ] Audit logging
-- [ ] HTTPS/TLS enforcement
-- [ ] Secrets management (Vault)
+### 生产要求
+- [ ] 添加身份验证（JWT）
+- [ ] 每用户速率限制
+- [ ] API 调用的请求签名
+- [ ] 审计日志
+- [ ] HTTPS/TLS 强制
+- [ ] 密钥管理（Vault）
 
-## Testing Strategy
+## 测试策略
 
-### Recommended Tests
+### 推荐测试
 
-**Unit Tests**
+**单元测试**
 ```go
-// Repository tests
+// 仓储测试
 func TestWalletRepository_Create(t *testing.T) {
-    // Test database operations
+    // 测试数据库操作
 }
 
-// Service tests with mocks
+// 带模拟的服务测试
 func TestSyncService_SyncAddress(t *testing.T) {
     mockProvider := &MockProvider{}
-    // Test business logic
+    // 测试业务逻辑
 }
 ```
 
-**Integration Tests**
+**集成测试**
 ```go
-// API tests
+// API 测试
 func TestWalletAPI_CreateWallet(t *testing.T) {
-    // Test full HTTP flow
+    // 测试完整的 HTTP 流程
 }
 ```
 
-**Frontend Tests**
+**前端测试**
 ```javascript
-// Component tests
+// 组件测试
 describe('EVMAccounts', () => {
-  it('displays wallets correctly', () => {
-    // Test component rendering
+  it('正确显示钱包', () => {
+    // 测试组件渲染
   })
 })
 ```
 
-## Deployment
+## 部署
 
-### Development
+### 开发环境
 ```bash
-# Backend
+# 后端
 go run cmd/server/main.go
 
-# Frontend
+# 前端
 cd frontend && npm run dev
 ```
 
-### Production
+### 生产环境
 ```bash
-# Build backend
+# 构建后端
 make build
 
-# Build frontend
+# 构建前端
 cd frontend && npm run build
 
-# Run
+# 运行
 ./bin/rotki-demo
 ```
 
-### Docker (Recommended)
+### Docker（推荐）
 ```bash
 docker-compose up -d
 ```
 
-## Monitoring
+## 监控
 
-### Metrics to Track
-- API response times
-- DeBank API call count
-- Sync success/failure rate
-- Database query performance
-- Token balance discrepancies
+### 要跟踪的指标
+- API 响应时间
+- DeBank API 调用计数
+- 同步成功/失败率
+- 数据库查询性能
+- 代币余额差异
 
-### Logging
-- Structured logging with Zap
-- Log levels: DEBUG, INFO, WARN, ERROR
-- Request/response logging
-- Error stack traces
+### 日志
+- 使用 Zap 的结构化日志
+- 日志级别：DEBUG、INFO、WARN、ERROR
+- 请求/响应日志
+- 错误堆栈跟踪
 
-## Future Enhancements
+## 未来增强
 
-### Phase 2
-- [ ] Support for Bitcoin/Solana addresses
-- [ ] Historical balance charts
-- [ ] Transaction history
-- [ ] NFT tracking
+### 阶段 2
+- [ ] 支持比特币/Solana 地址
+- [ ] 历史余额图表
+- [ ] 交易历史
+- [ ] NFT 跟踪
 
-### Phase 3
-- [ ] Multi-user support
-- [ ] Authentication/authorization
-- [ ] Custom alerts
-- [ ] Export functionality
+### 阶段 3
+- [ ] 多用户支持
+- [ ] 身份验证/授权
+- [ ] 自定义警报
+- [ ] 导出功能
 
-### Phase 4
-- [ ] Self-hosted blockchain nodes
-- [ ] Custom data provider
-- [ ] Remove DeBank dependency
-- [ ] Advanced analytics
+### 阶段 4
+- [ ] 自托管区块链节点
+- [ ] 自定义数据提供商
+- [ ] 移除 DeBank 依赖
+- [ ] 高级分析

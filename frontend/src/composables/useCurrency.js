@@ -7,7 +7,7 @@ const currencySymbols = {
   BTC: '₿'
 }
 
-// Shared state
+// 共享状态
 const selectedCurrency = ref('USD')
 const exchangeRates = ref({
   USD: 1,
@@ -16,7 +16,7 @@ const exchangeRates = ref({
 })
 
 export function useCurrency() {
-  // Update exchange rates from token prices
+  // 从代币价格更新汇率
   const updateExchangeRates = (addresses) => {
     let ethPrice = null
     let btcPrice = null
@@ -24,7 +24,7 @@ export function useCurrency() {
     addresses.forEach((addr) => {
       if (addr.tokens && addr.tokens.length > 0) {
         addr.tokens.forEach((token) => {
-          // Look for ETH (native token symbol is usually ETH or WETH)
+          // 查找ETH（原生代币符号通常为ETH或WETH）
           if (
             (token.symbol === 'ETH' || token.symbol === 'WETH' || token.token_id === 'eth') &&
             token.price &&
@@ -32,7 +32,7 @@ export function useCurrency() {
           ) {
             ethPrice = token.price
           }
-          // Look for BTC (wrapped BTC tokens)
+          // 查找BTC（包装BTC代币）
           if (
             (token.symbol === 'WBTC' || token.symbol === 'BTC' || token.symbol.includes('BTC')) &&
             token.price &&
@@ -44,7 +44,7 @@ export function useCurrency() {
       }
     })
 
-    // Update rates (1 ETH = X USD, so to convert USD to ETH: divide by ethPrice)
+    // 更新汇率（1 ETH = X USD，所以将USD转换为ETH：除以ethPrice）
     if (ethPrice) {
       exchangeRates.value.ETH = ethPrice
       console.log('ETH price found:', ethPrice)
@@ -64,7 +64,7 @@ export function useCurrency() {
     console.log('Exchange rates updated:', exchangeRates.value)
   }
 
-  // Format value based on selected currency
+  // 根据选定的货币格式化价值
   const formatValue = (value) => {
     const rate = exchangeRates.value[selectedCurrency.value]
     if (rate === 0 || !rate) {
@@ -74,7 +74,7 @@ export function useCurrency() {
     return convertedValue.toFixed(selectedCurrency.value === 'USD' ? 2 : 6)
   }
 
-  // Format token price based on selected currency
+  // 根据选定的货币格式化代币价格
   const formatTokenPrice = (usdPrice) => {
     const rate = exchangeRates.value[selectedCurrency.value]
     if (rate === 0 || !rate) {
@@ -84,7 +84,7 @@ export function useCurrency() {
     return convertedPrice.toFixed(selectedCurrency.value === 'USD' ? 2 : 6)
   }
 
-  // Format token value based on selected currency
+  // 根据选定的货币格式化代币价值
   const formatTokenValue = (usdValue) => {
     const rate = exchangeRates.value[selectedCurrency.value]
     if (rate === 0 || !rate) {
@@ -94,13 +94,13 @@ export function useCurrency() {
     return convertedValue.toFixed(selectedCurrency.value === 'USD' ? 2 : 6)
   }
 
-  // Currency selection function
+  // 货币选择函数
   const selectCurrency = (currency) => {
     selectedCurrency.value = currency
     localStorage.setItem('selectedCurrency', currency)
   }
 
-  // Restore saved currency preference
+  // 恢复保存的货币偏好设置
   const restoreSavedCurrency = () => {
     const savedCurrency = localStorage.getItem('selectedCurrency')
     if (savedCurrency && currencies.includes(savedCurrency)) {

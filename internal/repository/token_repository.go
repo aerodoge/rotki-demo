@@ -6,17 +6,17 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// TokenRepository handles token data operations
+// TokenRepository 处理代币数据操作
 type TokenRepository struct {
 	db *gorm.DB
 }
 
-// NewTokenRepository creates a new token repository
+// NewTokenRepository 创建一个新的代币仓库
 func NewTokenRepository(db *gorm.DB) *TokenRepository {
 	return &TokenRepository{db: db}
 }
 
-// UpsertBatch inserts or updates tokens in batch
+// UpsertBatch 批量插入或更新代币
 func (r *TokenRepository) UpsertBatch(tokens []models.Token) error {
 	if len(tokens) == 0 {
 		return nil
@@ -35,7 +35,7 @@ func (r *TokenRepository) UpsertBatch(tokens []models.Token) error {
 	}).Create(&tokens).Error
 }
 
-// GetByAddressID retrieves all tokens for an address
+// GetByAddressID 获取地址的所有代币
 func (r *TokenRepository) GetByAddressID(addressID uint) ([]models.Token, error) {
 	var tokens []models.Token
 	err := r.db.Where("address_id = ?", addressID).
@@ -45,12 +45,12 @@ func (r *TokenRepository) GetByAddressID(addressID uint) ([]models.Token, error)
 	return tokens, err
 }
 
-// DeleteByAddressID deletes all tokens for an address
+// DeleteByAddressID 删除地址的所有代币
 func (r *TokenRepository) DeleteByAddressID(addressID uint) error {
 	return r.db.Where("address_id = ?", addressID).Delete(&models.Token{}).Error
 }
 
-// GetTotalValueByAddressID calculates total USD value for an address
+// GetTotalValueByAddressID 计算地址的总 USD 价值
 func (r *TokenRepository) GetTotalValueByAddressID(addressID uint) (float64, error) {
 	var total float64
 	err := r.db.Model(&models.Token{}).

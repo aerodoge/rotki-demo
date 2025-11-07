@@ -1,52 +1,52 @@
-# Database Migrations
+# 数据库迁移
 
-This directory contains SQL migration files for the database schema.
+此目录包含数据库模式的 SQL 迁移文件。
 
-## Files
+## 文件
 
-- `001_initial_schema.sql` - Initial database schema with all tables
+- `001_initial_schema.sql` - 包含所有表的初始数据库模式
 
-## Usage
+## 使用方法
 
-### With Docker
-Migrations are automatically applied when the MySQL container starts for the first time.
+### 使用 Docker
+当 MySQL 容器首次启动时，迁移会自动应用。
 
-### Manual Application
+### 手动应用
 ```bash
-# Using MySQL command line
+# 使用 MySQL 命令行
 mysql -u root -p rotki_demo < migrations/001_initial_schema.sql
 
-# Using Docker
+# 使用 Docker
 docker exec -i rotki-mysql mysql -uroot -protki123 rotki_demo < migrations/001_initial_schema.sql
 ```
 
-## Schema Overview
+## 模式概览
 
-### Core Tables
-- **wallets** - Wallet metadata
-- **addresses** - Blockchain addresses linked to wallets
-- **tokens** - Token balances for each address
-- **chains** - Blockchain information
-- **asset_snapshots** - Historical balance snapshots
-- **sync_jobs** - Background sync job tracking
+### 核心表
+- **wallets** - 钱包元数据
+- **addresses** - 链接到钱包的区块链地址
+- **tokens** - 每个地址的代币余额
+- **chains** - 区块链信息
+- **asset_snapshots** - 历史余额快照
+- **sync_jobs** - 后台同步作业跟踪
 
-### Relationships
+### 关系
 ```
 wallets (1:N) -> addresses (1:N) -> tokens
                             |
                             +-----> asset_snapshots
 ```
 
-## Adding New Migrations
+## 添加新迁移
 
-When adding new migrations:
+添加新迁移时：
 
-1. Create a new file: `002_description.sql`
-2. Use proper naming: `NNN_description.sql`
-3. Include both UP and DOWN migrations
-4. Test thoroughly before committing
+1. 创建新文件：`002_description.sql`
+2. 使用正确的命名：`NNN_description.sql`
+3. 包括 UP 和 DOWN 迁移
+4. 提交前彻底测试
 
-Example:
+示例：
 ```sql
 -- 002_add_nft_table.sql
 CREATE TABLE nfts (
@@ -56,8 +56,8 @@ CREATE TABLE nfts (
 );
 ```
 
-## Notes
+## 注意事项
 
-- Migrations are run in alphabetical order
-- The application also uses GORM AutoMigrate as a fallback
-- For production, consider using a proper migration tool like golang-migrate
+- 迁移按字母顺序运行
+- 应用程序还使用 GORM AutoMigrate 作为后备
+- 对于生产环境，考虑使用适当的迁移工具，如 golang-migrate

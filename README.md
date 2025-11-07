@@ -1,348 +1,348 @@
-# Rotki Demo - DeFi Asset Management System
+# Rotki Demo - DeFi 资产管理系统
 
-A DeFi asset tracking application similar to Rotki, built with Go backend and Vue.js frontend, using DeBank API for blockchain data.
+一个类似于 Rotki 的 DeFi 资产追踪应用，使用 Go 后端和 Vue.js 前端构建，通过 DeBank API 获取区块链数据。
 
-## Features
+## 功能特性
 
-- **Wallet Management**: Create and manage multiple wallets
-- **Address Tracking**: Add EVM addresses to wallets and track their assets
-- **Real-time Data**: Sync token balances and DeFi positions from DeBank API
-- **Auto-refresh**: Automatic periodic syncing of all addresses
-- **Manual Refresh**: On-demand refresh for individual addresses or entire wallets
-- **Asset Display**: View tokens, protocols, and total values across all chains
-- **Extensible Architecture**: Provider interface allows easy switching from DeBank to custom data sources
+- **钱包管理**：创建和管理多个钱包
+- **地址追踪**：添加 EVM 地址到钱包并追踪其资产
+- **实时数据**：从 DeBank API 同步代币余额和 DeFi 持仓
+- **自动刷新**：自动定期同步所有地址
+- **手动刷新**：按需刷新单个地址或整个钱包
+- **资产展示**：查看所有链上的代币、协议和总价值
+- **可扩展架构**：提供商接口允许轻松从 DeBank 切换到自定义数据源
 
-## Architecture
+## 架构
 
-### Backend (Go)
-- **Web Framework**: Gin
-- **Configuration**: Viper
-- **Logging**: Zap
-- **Database**: MySQL with GORM
-- **Caching**: Redis (optional)
-- **Rate Limiting**: Token bucket algorithm for API calls
+### 后端 (Go)
+- **Web 框架**：Gin
+- **配置管理**：Viper
+- **日志**：Zap
+- **数据库**：MySQL + GORM
+- **缓存**：Redis (可选)
+- **速率限制**：令牌桶算法用于 API 调用
 
-### Frontend (Vue.js)
-- **Framework**: Vue 3 with Composition API
-- **State Management**: Pinia
-- **HTTP Client**: Axios
-- **Build Tool**: Vite
+### 前端 (Vue.js)
+- **框架**：Vue 3 + Composition API
+- **状态管理**：Pinia
+- **HTTP 客户端**：Axios
+- **构建工具**：Vite
 
-### Key Design Patterns
+### 核心设计模式
 
-1. **Provider Interface Pattern**: Abstraction layer for data sources
-   - Current: DeBank API
-   - Future: Self-queried blockchain data, other APIs
+1. **提供商接口模式**：数据源抽象层
+   - 当前：DeBank API
+   - 未来：自查询区块链数据、其他 API
 
-2. **Repository Pattern**: Database access layer separation
+2. **仓储模式**：数据库访问层分离
 
-3. **Service Layer**: Business logic encapsulation
+3. **服务层**：业务逻辑封装
 
-4. **Rate Limiting**: Built-in protection against API rate limits
+4. **速率限制**：内置 API 速率限制保护
 
-## Project Structure
+## 项目结构
 
 ```
 rotki-demo/
 ├── cmd/
 │   └── server/
-│       └── main.go              # Application entry point
+│       └── main.go              # 应用程序入口点
 ├── internal/
 │   ├── api/
-│   │   ├── handler/             # HTTP request handlers
-│   │   └── router/              # Route definitions
-│   ├── config/                  # Configuration management
-│   ├── database/                # Database initialization
-│   ├── logger/                  # Logging setup
-│   ├── models/                  # Database models
-│   ├── provider/                # Data provider interface
-│   │   └── debank/              # DeBank API implementation
-│   ├── repository/              # Data access layer
-│   └── service/                 # Business logic
+│   │   ├── handler/             # HTTP 请求处理器
+│   │   └── router/              # 路由定义
+│   ├── config/                  # 配置管理
+│   ├── database/                # 数据库初始化
+│   ├── logger/                  # 日志设置
+│   ├── models/                  # 数据库模型
+│   ├── provider/                # 数据提供商接口
+│   │   └── debank/              # DeBank API 实现
+│   ├── repository/              # 数据访问层
+│   └── service/                 # 业务逻辑
 ├── frontend/
 │   ├── src/
-│   │   ├── api/                 # API client
-│   │   ├── components/          # Vue components
-│   │   ├── stores/              # Pinia stores
-│   │   └── views/               # Page components
+│   │   ├── api/                 # API 客户端
+│   │   ├── components/          # Vue 组件
+│   │   ├── stores/              # Pinia 状态存储
+│   │   └── views/               # 页面组件
 │   └── vite.config.js
 ├── docs/
-│   └── database_schema.sql      # Database schema
-├── config.yaml                  # Application configuration
-└── go.mod                       # Go dependencies
+│   └── database_schema.sql      # 数据库模式
+├── config.yaml                  # 应用程序配置
+└── go.mod                       # Go 依赖
 ```
 
-## Getting Started
+## 开始使用
 
-### Prerequisites
+### 前置要求
 
-- Docker & Docker Compose (recommended)
-- OR: Go 1.21+ & Node.js 18+ & MySQL 8.0+
-- DeBank API Key (get from https://docs.cloud.debank.com)
+- Docker & Docker Compose（推荐）
+- 或者：Go 1.21+ & Node.js 18+ & MySQL 8.0+
+- DeBank API 密钥（从 https://docs.cloud.debank.com 获取）
 
-### 🐳 Quick Start with Docker (Recommended)
+### 🐳 使用 Docker 快速启动（推荐）
 
-The fastest way to get started:
+最快的启动方式：
 
 ```bash
-# 1. Run the quick start script
+# 1. 运行快速启动脚本
 ./scripts/quick-start.sh
 
-# 2. Start the frontend (in a new terminal)
+# 2. 启动前端（在新终端中）
 cd frontend && npm run dev
 
-# 3. Open http://localhost:3000
+# 3. 打开 http://localhost:3000
 ```
 
-That's it! The script will:
-- Start MySQL and Redis containers
-- Start the backend service
-- Install frontend dependencies
-- Wait for all services to be ready
+就这么简单！脚本将会：
+- 启动 MySQL 和 Redis 容器
+- 启动后端服务
+- 安装前端依赖
+- 等待所有服务准备就绪
 
-For more Docker options, see [Docker Guide](docs/DOCKER.md).
+更多 Docker 选项，请查看 [Docker 指南](docs/DOCKER.md)。
 
-### 📦 Manual Setup (Without Docker)
+### 📦 手动设置（不使用 Docker）
 
-If you prefer to run MySQL locally:
+如果你更喜欢在本地运行 MySQL：
 
-### Backend Setup
+### 后端设置
 
-1. Install dependencies:
+1. 安装依赖：
 ```bash
 cd /Users/miles/go/src/rotki-demo
 go mod download
 ```
 
-2. Create database:
+2. 创建数据库：
 ```bash
 mysql -u root -p
 CREATE DATABASE rotki_demo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-3. Import schema:
+3. 导入模式：
 ```bash
 mysql -u root -p rotki_demo < migrations/001_initial_schema.sql
 ```
 
-4. Configure application:
+4. 配置应用程序：
 ```bash
 cp config.yaml config.yaml
-# Edit config.yaml and add your DeBank API key
+# 编辑 config.yaml 并添加你的 DeBank API 密钥
 ```
 
-5. Run the server:
+5. 运行服务器：
 ```bash
 go run cmd/server/main.go
 ```
 
-The API will be available at `http://localhost:8080`
+API 将在 `http://localhost:8080` 可用
 
-### Frontend Setup
+### 前端设置
 
-1. Install dependencies:
+1. 安装依赖：
 ```bash
 cd frontend
 npm install
 ```
 
-2. Configure environment:
+2. 配置环境：
 ```bash
 cp .env.example .env
-# Edit .env if needed
+# 如果需要，编辑 .env
 ```
 
-3. Run development server:
+3. 运行开发服务器：
 ```bash
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:3000`
+前端将在 `http://localhost:3000` 可用
 
-## 🐳 Docker Commands
+## 🐳 Docker 命令
 
 ```bash
-# Start only databases (for local development)
+# 仅启动数据库（用于本地开发）
 make docker-db
-# or: docker-compose up -d mysql redis
+# 或：docker-compose up -d mysql redis
 
-# Start all services (including backend)
+# 启动所有服务（包括后端）
 make docker-up
-# or: docker-compose up -d
+# 或：docker-compose up -d
 
-# View logs
+# 查看日志
 make docker-logs
-# or: docker-compose logs -f
+# 或：docker-compose logs -f
 
-# Stop all services
+# 停止所有服务
 make docker-down
-# or: docker-compose down
+# 或：docker-compose down
 
-# Clean everything (including data)
+# 清理所有内容（包括数据）
 make docker-clean
-# or: docker-compose down -v
+# 或：docker-compose down -v
 ```
 
-For complete Docker documentation, see [docs/DOCKER.md](docs/DOCKER.md).
+完整的 Docker 文档，请参见 [docs/DOCKER.md](docs/DOCKER.md)。
 
-## 🔄 Starting and Stopping Services
+## 🔄 启动和停止服务
 
-### Stop Services
+### 停止服务
 
-**Stop Backend (Docker):**
+**停止后端（Docker）：**
 ```bash
-# Stop all Docker services
+# 停止所有 Docker 服务
 docker-compose down
 
-# Or use Makefile
+# 或使用 Makefile
 make docker-down
 ```
 
-**Stop Frontend:**
+**停止前端：**
 ```bash
-# Press Ctrl+C in the terminal running the frontend
+# 在运行前端的终端中按 Ctrl+C
 ```
 
-### Restart Services
+### 重启服务
 
-**Restart Backend:**
+**重启后端：**
 
 ```bash
-# Option 1: Full restart (including database)
+# 选项 1：完全重启（包括数据库）
 docker-compose down
 docker-compose up -d
 
-# Option 2: Restart backend only (keep database running)
+# 选项 2：仅重启后端（保持数据库运行）
 docker-compose restart backend
 
-# Option 3: Rebuild backend (after code changes)
+# 选项 3：重新构建后端（代码更改后）
 docker-compose build backend
 docker-compose up -d backend
 ```
 
-**Restart Frontend:**
+**重启前端：**
 ```bash
 cd frontend
 npm run dev
 ```
 
-### Complete Restart (Clean All Data)
+### 完全重启（清除所有数据）
 
 ```bash
-# Stop and remove all containers and volumes
+# 停止并删除所有容器和卷
 docker-compose down -v
 
-# Start fresh
+# 全新启动
 docker-compose up -d
 
-# Start frontend
+# 启动前端
 cd frontend && npm run dev
 ```
 
-### Quick Restart (Keep Data)
+### 快速重启（保留数据）
 
 ```bash
-# Restart all Docker services
+# 重启所有 Docker 服务
 docker-compose restart
 
-# Frontend will auto-reload (Vite hot reload)
+# 前端将自动重载（Vite 热重载）
 ```
 
-### Check Service Status
+### 检查服务状态
 
 ```bash
-# View all services
+# 查看所有服务
 docker-compose ps
 
-# View backend logs
+# 查看后端日志
 docker-compose logs backend
 
-# Follow logs in real-time
+# 实时跟踪日志
 docker-compose logs -f backend
 
-# Test backend health
+# 测试后端健康状态
 curl http://localhost:8080/health
 
-# Check frontend
-# Open http://localhost:3000 in browser
+# 检查前端
+# 在浏览器中打开 http://localhost:3000
 ```
 
-### Development Workflow
+### 开发工作流
 
-**Daily Development (Run locally with Docker database):**
+**日常开发（使用 Docker 数据库本地运行）：**
 ```bash
-# Terminal 1: Start database only
+# 终端 1：仅启动数据库
 make docker-db
 
-# Terminal 2: Start backend
+# 终端 2：启动后端
 go run cmd/server/main.go
 
-# Terminal 3: Start frontend
+# 终端 3：启动前端
 cd frontend && npm run dev
 ```
 
-**Using Docker for Backend:**
+**使用 Docker 运行后端：**
 ```bash
-# Terminal 1: Start all services
+# 终端 1：启动所有服务
 docker-compose up -d
 docker-compose logs -f backend
 
-# Terminal 2: Start frontend
+# 终端 2：启动前端
 cd frontend && npm run dev
 ```
 
-**Stop Everything:**
+**停止所有服务：**
 ```bash
-# Stop Docker services
+# 停止 Docker 服务
 docker-compose down
 
-# Stop frontend: Press Ctrl+C in terminal
+# 停止前端：在终端中按 Ctrl+C
 ```
 
-### Makefile Commands
+### Makefile 命令
 
 ```bash
-# Docker operations
-make docker-up          # Start all services
-make docker-down        # Stop all services
-make docker-restart     # Restart all services
-make docker-build       # Rebuild images
-make docker-logs        # View logs
-make docker-ps          # Check status
-make docker-clean       # Clean all data (removes volumes)
-make docker-db          # Start only MySQL + Redis
+# Docker 操作
+make docker-up          # 启动所有服务
+make docker-down        # 停止所有服务
+make docker-restart     # 重启所有服务
+make docker-build       # 重新构建镜像
+make docker-logs        # 查看日志
+make docker-ps          # 检查状态
+make docker-clean       # 清理所有数据（删除卷）
+make docker-db          # 仅启动 MySQL + Redis
 
-# Frontend operations
+# 前端操作
 cd frontend
-npm run dev             # Start dev server
-npm run build           # Build for production
+npm run dev             # 启动开发服务器
+npm run build           # 构建生产版本
 
-# Quick start script
-./scripts/quick-start.sh  # One-command startup
-./scripts/stop.sh         # Stop all services
+# 快速启动脚本
+./scripts/quick-start.sh  # 一键启动
+./scripts/stop.sh         # 停止所有服务
 ```
 
-## API Endpoints
+## API 端点
 
-### Wallets
-- `GET /api/v1/wallets` - List all wallets
-- `POST /api/v1/wallets` - Create a wallet
-- `GET /api/v1/wallets/:id` - Get wallet details
-- `PUT /api/v1/wallets/:id` - Update wallet
-- `DELETE /api/v1/wallets/:id` - Delete wallet
-- `POST /api/v1/wallets/:id/refresh` - Refresh all addresses in wallet
+### 钱包
+- `GET /api/v1/wallets` - 列出所有钱包
+- `POST /api/v1/wallets` - 创建钱包
+- `GET /api/v1/wallets/:id` - 获取钱包详情
+- `PUT /api/v1/wallets/:id` - 更新钱包
+- `DELETE /api/v1/wallets/:id` - 删除钱包
+- `POST /api/v1/wallets/:id/refresh` - 刷新钱包中的所有地址
 
-### Addresses
-- `GET /api/v1/addresses` - List all addresses
-- `GET /api/v1/addresses?wallet_id=:id` - List addresses by wallet
-- `POST /api/v1/addresses` - Add an address
-- `GET /api/v1/addresses/:id` - Get address details
-- `DELETE /api/v1/addresses/:id` - Delete address
-- `POST /api/v1/addresses/:id/refresh` - Refresh address data
+### 地址
+- `GET /api/v1/addresses` - 列出所有地址
+- `GET /api/v1/addresses?wallet_id=:id` - 按钱包列出地址
+- `POST /api/v1/addresses` - 添加地址
+- `GET /api/v1/addresses/:id` - 获取地址详情
+- `DELETE /api/v1/addresses/:id` - 删除地址
+- `POST /api/v1/addresses/:id/refresh` - 刷新地址数据
 
-## Configuration
+## 配置
 
-### Database Configuration
+### 数据库配置
 ```yaml
 database:
   host: localhost
@@ -354,7 +354,7 @@ database:
   max_open_conns: 100
 ```
 
-### DeBank API Configuration
+### DeBank API 配置
 ```yaml
 debank:
   api_key: "YOUR_API_KEY"
@@ -366,111 +366,111 @@ debank:
   timeout: 30
 ```
 
-### Sync Configuration
+### 同步配置
 ```yaml
 sync:
   enabled: true
-  interval: 300        # Sync every 5 minutes
-  batch_size: 10       # Process 10 addresses concurrently
+  interval: 300        # 每 5 分钟同步一次
+  batch_size: 10       # 并发处理 10 个地址
 ```
 
-## DeBank API Integration
+## DeBank API 集成
 
-### Rate Limiting Strategy
-- Token bucket algorithm with configurable rate
-- Default: 5 requests/second with burst of 10
-- Automatic backoff on rate limit errors
+### 速率限制策略
+- 可配置速率的令牌桶算法
+- 默认：每秒 5 个请求，突发 10 个
+- 速率限制错误时自动退避
 
-### Cost Optimization
-1. **Caching**: 60-second TTL on API responses
-2. **Batch Requests**: Use `all_token_list` endpoint to get all chains at once
-3. **Periodic Sync**: Configurable interval to avoid unnecessary calls
-4. **On-demand Refresh**: Manual refresh only when needed
+### 成本优化
+1. **缓存**：API 响应的 60 秒 TTL
+2. **批量请求**：使用 `all_token_list` 端点一次获取所有链
+3. **定期同步**：可配置间隔以避免不必要的调用
+4. **按需刷新**：仅在需要时手动刷新
 
-### API Endpoints Used
-- `/v1/user/total_balance` - Get total value across all chains
-- `/v1/user/all_token_list` - Get all tokens for an address
-- `/v1/user/used_chain_list` - Get chains used by address
-- `/v1/user/all_complex_protocol_list` - Get DeFi protocol positions
+### 使用的 API 端点
+- `/v1/user/total_balance` - 获取所有链的总价值
+- `/v1/user/all_token_list` - 获取地址的所有代币
+- `/v1/user/used_chain_list` - 获取地址使用的链
+- `/v1/user/all_complex_protocol_list` - 获取 DeFi 协议持仓
 
-## Switching Data Providers
+## 切换数据提供商
 
-The application uses a provider interface pattern for easy switching:
+应用程序使用提供商接口模式以便于切换：
 
-### Current: DeBank Provider
+### 当前：DeBank 提供商
 ```go
 provider := debank.NewDeBankProvider(&cfg.DeBank)
 ```
 
-### Future: Custom Provider
+### 未来：自定义提供商
 ```go
-// Implement the DataProvider interface
+// 实现 DataProvider 接口
 type CustomProvider struct {
-    // Your implementation
+    // 你的实现
 }
 
 func (p *CustomProvider) GetTokenList(ctx context.Context, address string, chainIDs []string) ([]TokenInfo, error) {
-    // Query blockchain directly or use another API
+    // 直接查询区块链或使用其他 API
 }
 
-// Use it
+// 使用它
 provider := NewCustomProvider(config)
 ```
 
-The interface ensures all providers implement the same methods:
+接口确保所有提供商实现相同的方法：
 - `GetTotalBalance()`
 - `GetTokenList()`
 - `GetUsedChainList()`
 - `GetProtocolList()`
 
-## Monitoring and Logging
+## 监控和日志
 
-Logs are output using structured logging (Zap):
-- Debug: Detailed request/response logs
-- Info: Important events (server start, sync completed)
-- Error: Errors and failures
+使用结构化日志（Zap）输出日志：
+- Debug：详细的请求/响应日志
+- Info：重要事件（服务器启动、同步完成）
+- Error：错误和失败
 
-Configure log level in `config.yaml`:
+在 `config.yaml` 中配置日志级别：
 ```yaml
 log:
   level: debug  # debug, info, warn, error
   output: stdout
 ```
 
-## Performance Considerations
+## 性能考虑
 
-1. **Database Indexing**: All foreign keys and frequently queried fields are indexed
-2. **Batch Operations**: Token upserts use batch operations
-3. **Concurrent Sync**: Multiple addresses synced in parallel
-4. **Connection Pooling**: Database connection pool configured
-5. **Rate Limiting**: Prevents API throttling
+1. **数据库索引**：所有外键和频繁查询的字段都已建立索引
+2. **批量操作**：代币更新使用批量操作
+3. **并发同步**：多个地址并行同步
+4. **连接池**：数据库连接池已配置
+5. **速率限制**：防止 API 限流
 
-## Security Considerations
+## 安全考虑
 
-1. **Input Validation**: All user inputs validated
-2. **SQL Injection**: GORM parameterized queries
-3. **CORS**: Configurable CORS policies
-4. **API Keys**: Stored in config, never committed to git
-5. **Error Handling**: No sensitive data in error responses
+1. **输入验证**：所有用户输入都经过验证
+2. **SQL 注入**：GORM 参数化查询
+3. **CORS**：可配置的 CORS 策略
+4. **API 密钥**：存储在配置中，永不提交到 git
+5. **错误处理**：错误响应中不包含敏感数据
 
-## Future Enhancements
+## 未来增强
 
-- [ ] Support for Bitcoin addresses
-- [ ] Support for Solana addresses
-- [ ] Historical balance tracking
-- [ ] Chart visualizations
-- [ ] Export to CSV/PDF
-- [ ] Transaction history
-- [ ] NFT tracking
-- [ ] DeFi protocol details
-- [ ] Custom tags and labels
-- [ ] Multi-user support with authentication
-- [ ] Webhook notifications
+- [ ] 支持比特币地址
+- [ ] 支持 Solana 地址
+- [ ] 历史余额跟踪
+- [ ] 图表可视化
+- [ ] 导出到 CSV/PDF
+- [ ] 交易历史
+- [ ] NFT 跟踪
+- [ ] DeFi 协议详情
+- [ ] 自定义标签
+- [ ] 多用户支持与身份验证
+- [ ] Webhook 通知
 
-## License
+## 许可证
 
 MIT
 
-## Contributing
+## 贡献
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+欢迎贡献！请随时提交 Pull Request。

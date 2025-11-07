@@ -20,14 +20,14 @@ import (
 )
 
 func main() {
-	// Load configuration
+	// 加载配置
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		fmt.Printf("Failed to load config: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Initialize logger
+	// 初始化日志
 	if err := logger.InitLogger(&cfg.Log); err != nil {
 		fmt.Printf("Failed to initialize logger: %v\n", err)
 		os.Exit(1)
@@ -36,19 +36,19 @@ func main() {
 
 	logger.Info("Starting Rotki Demo application")
 
-	// Initialize database
+	// 初始化数据库
 	if err := database.InitDatabase(&cfg.Database); err != nil {
 		logger.Fatal("Failed to initialize database", zap.Error(err))
 	}
 
-	// Run migrations
-	// Note: Migrations are handled by SQL file in migrations/001_initial_schema.sql
-	// AutoMigrate is disabled to avoid conflicts with manual schema
+	// 运行迁移
+	// 注意：迁移由 migrations/001_initial_schema.sql 中的 SQL 文件处理
+	// 为避免与手动模式冲突，禁用 AutoMigrate
 	// if err := database.AutoMigrate(); err != nil {
 	// 	logger.Fatal("Failed to run migrations", zap.Error(err))
 	// }
 
-	// Initialize repositories
+	// 初始化仓储层
 	db := database.GetDB()
 	walletRepo := repository.NewWalletRepository(db)
 	addressRepo := repository.NewAddressRepository(db)
@@ -56,16 +56,16 @@ func main() {
 	chainRepo := repository.NewChainRepository(db)
 	rpcNodeRepo := repository.NewRPCNodeRepository(db)
 
-	// Initialize all chains from chains.json
+	// 从 chains.json 初始化所有链
 	chainInitializer := service.NewChainInitializer(chainRepo)
 	if err := chainInitializer.InitializeAllChainsFromDefault(); err != nil {
 		logger.Warn("Failed to initialize chains from file", zap.Error(err))
 	}
 
-	// Initialize data provider
+	// 初始化数据提供者
 	dataProvider := debank.NewDeBankProvider(&cfg.DeBank)
 
-	// Initialize sync service
+	// 初始化同步服务
 	syncService := service.NewSyncService(
 		dataProvider,
 		walletRepo,
@@ -76,29 +76,29 @@ func main() {
 		cfg.Sync.BatchSize,
 	)
 
-	// Start sync service if enabled
+	// 如果启用则启动同步服务
 	if cfg.Sync.Enabled {
 		syncService.Start()
 		defer syncService.Stop()
 	}
 
-	// Initialize RPC node service
+	// 初始化 RPC 节点服务
 	rpcNodeService := service.NewRPCNodeService(rpcNodeRepo, logger.GetLogger())
 
-	// Initialize handlers
+	// 初始化处理器
 	walletHandler := handler.NewWalletHandler(walletRepo)
 	addressHandler := handler.NewAddressHandler(addressRepo, tokenRepo, syncService)
 	chainHandler := handler.NewChainHandler(chainRepo)
 	rpcNodeHandler := handler.NewRPCNodeHandler(rpcNodeService, logger.GetLogger())
 
-	// Setup router
+	// 设置路由
 	r := router.SetupRouter(walletHandler, addressHandler, chainHandler, rpcNodeHandler)
 
-	// Start server
+	// 启动服务器
 	serverAddr := fmt.Sprintf(":%d", cfg.Server.Port)
 	logger.Info("Starting HTTP server", zap.String("address", serverAddr))
 
-	// Graceful shutdown
+	// 优雅关闭
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
@@ -108,15 +108,15 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal
+	// 等待中断信号
 	<-quit
 	logger.Info("Shutting down server...")
 
-	// Give outstanding requests 5 seconds to complete
+	// 给未完成的请求 5 秒时间完成
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Wait for context timeout
+	// 等待上下文超时
 	<-ctx.Done()
 	logger.Info("Server stopped")
 }

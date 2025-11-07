@@ -11,14 +11,14 @@ import (
 	"github.com/miles/rotki-demo/internal/service"
 )
 
-// AddressHandler handles address-related HTTP requests
+// AddressHandler 处理地址相关的 HTTP 请求
 type AddressHandler struct {
 	addressRepo *repository.AddressRepository
 	tokenRepo   *repository.TokenRepository
 	syncService *service.SyncService
 }
 
-// NewAddressHandler creates a new address handler
+// NewAddressHandler 创建一个新的地址处理器
 func NewAddressHandler(
 	addressRepo *repository.AddressRepository,
 	tokenRepo *repository.TokenRepository,
@@ -31,7 +31,7 @@ func NewAddressHandler(
 	}
 }
 
-// CreateAddressRequest represents the request to create an address
+// CreateAddressRequest 表示创建地址的请求
 type CreateAddressRequest struct {
 	WalletID  uint   `json:"wallet_id" binding:"required"`
 	Address   string `json:"address" binding:"required"`
@@ -39,13 +39,13 @@ type CreateAddressRequest struct {
 	Label     string `json:"label"`
 }
 
-// UpdateAddressRequest represents the request to update an address
+// UpdateAddressRequest 表示更新地址的请求
 type UpdateAddressRequest struct {
 	Label string             `json:"label"`
 	Tags  models.StringSlice `json:"tags"`
 }
 
-// CreateAddress creates a new address
+// CreateAddress 创建一个新的地址
 // POST /api/v1/addresses
 func (h *AddressHandler) CreateAddress(c *gin.Context) {
 	var req CreateAddressRequest
@@ -70,8 +70,8 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 		return
 	}
 
-	// Trigger immediate sync for the new address in background
-	// Use background context instead of request context to avoid cancellation
+	// 在后台触发新地址的即时同步
+	// 使用后台上下文而不是请求上下文以避免取消
 	go func() {
 		ctx := context.Background()
 		_ = h.syncService.SyncAddress(ctx, address.ID)
@@ -80,7 +80,7 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 	c.JSON(http.StatusCreated, address)
 }
 
-// GetAddress retrieves an address by ID
+// GetAddress 根据 ID 获取地址
 // GET /api/v1/addresses/:id
 func (h *AddressHandler) GetAddress(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -95,7 +95,7 @@ func (h *AddressHandler) GetAddress(c *gin.Context) {
 		return
 	}
 
-	// Get tokens for this address
+	// 获取此地址的代币
 	tokens, err := h.tokenRepo.GetByAddressID(address.ID)
 	if err == nil {
 		address.Tokens = tokens
@@ -104,10 +104,10 @@ func (h *AddressHandler) GetAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, address)
 }
 
-// ListAddresses retrieves all addresses
+// ListAddresses 获取所有地址
 // GET /api/v1/addresses
 func (h *AddressHandler) ListAddresses(c *gin.Context) {
-	// Check if filtering by wallet
+	// 检查是否按钱包过滤
 	walletIDStr := c.Query("wallet_id")
 
 	var addresses []models.Address
@@ -129,7 +129,7 @@ func (h *AddressHandler) ListAddresses(c *gin.Context) {
 		return
 	}
 
-	// Enrich with tokens
+	// 补充代币信息
 	for i := range addresses {
 		tokens, err := h.tokenRepo.GetByAddressID(addresses[i].ID)
 		if err == nil {
@@ -140,7 +140,7 @@ func (h *AddressHandler) ListAddresses(c *gin.Context) {
 	c.JSON(http.StatusOK, addresses)
 }
 
-// UpdateAddress updates an address label
+// UpdateAddress 更新地址标签
 // PUT /api/v1/addresses/:id
 func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -169,7 +169,7 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 		return
 	}
 
-	// Get tokens for response
+	// 获取代币用于响应
 	tokens, err := h.tokenRepo.GetByAddressID(address.ID)
 	if err == nil {
 		address.Tokens = tokens
@@ -178,7 +178,7 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, address)
 }
 
-// DeleteAddress deletes an address
+// DeleteAddress 删除地址
 // DELETE /api/v1/addresses/:id
 func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -195,7 +195,7 @@ func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Address deleted successfully"})
 }
 
-// RefreshAddress triggers a sync for a specific address
+// RefreshAddress 触发特定地址的同步
 // POST /api/v1/addresses/:id/refresh
 func (h *AddressHandler) RefreshAddress(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -209,14 +209,14 @@ func (h *AddressHandler) RefreshAddress(c *gin.Context) {
 		return
 	}
 
-	// Get updated address data
+	// 获取更新后的地址数据
 	address, err := h.addressRepo.GetByID(uint(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve address"})
 		return
 	}
 
-	// Get tokens
+	// 获取代币
 	tokens, err := h.tokenRepo.GetByAddressID(address.ID)
 	if err == nil {
 		address.Tokens = tokens
@@ -225,7 +225,7 @@ func (h *AddressHandler) RefreshAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, address)
 }
 
-// RefreshWallet triggers a sync for all addresses in a wallet
+// RefreshWallet 触发钱包中所有地址的同步
 // POST /api/v1/wallets/:id/refresh
 func (h *AddressHandler) RefreshWallet(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)

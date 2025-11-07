@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// SyncService handles data synchronization
+// SyncService 处理数据同步
 type SyncService struct {
 	dataProvider provider.DataProvider
 	walletRepo   *repository.WalletRepository
@@ -27,7 +27,7 @@ type SyncService struct {
 	wg           sync.WaitGroup
 }
 
-// NewSyncService creates a new sync service
+// NewSyncService 创建一个新的同步服务
 func NewSyncService(
 	dataProvider provider.DataProvider,
 	walletRepo *repository.WalletRepository,
@@ -49,28 +49,28 @@ func NewSyncService(
 	}
 }
 
-// Start starts the background sync process
+// Start 启动后台同步进程
 func (s *SyncService) Start() {
 	s.wg.Add(1)
 	go s.syncLoop()
 	logger.Info("Sync service started", zap.Duration("interval", s.syncInterval))
 }
 
-// Stop stops the background sync process
+// Stop 停止后台同步进程
 func (s *SyncService) Stop() {
 	close(s.stopChan)
 	s.wg.Wait()
 	logger.Info("Sync service stopped")
 }
 
-// syncLoop runs periodic sync
+// syncLoop 运行周期性同步
 func (s *SyncService) syncLoop() {
 	defer s.wg.Done()
 
 	ticker := time.NewTicker(s.syncInterval)
 	defer ticker.Stop()
 
-	// Run initial sync
+	// 运行初始同步
 	s.syncAll()
 
 	for {
@@ -83,11 +83,11 @@ func (s *SyncService) syncLoop() {
 	}
 }
 
-// syncAll syncs all addresses that need updating
+// syncAll 同步所有需要更新的地址
 func (s *SyncService) syncAll() {
 	ctx := context.Background()
 
-	// Get addresses that need syncing
+	// 获取需要同步的地址
 	addresses, err := s.addressRepo.GetAllNeedingSync(s.syncInterval)
 	if err != nil {
 		logger.Error("Failed to get addresses for sync", zap.Error(err))
@@ -101,7 +101,7 @@ func (s *SyncService) syncAll() {
 
 	logger.Info("Starting sync", zap.Int("address_count", len(addresses)))
 
-	// Process in batches
+	// 分批处理
 	for i := 0; i < len(addresses); i += s.batchSize {
 		end := i + s.batchSize
 		if end > len(addresses) {
@@ -115,7 +115,7 @@ func (s *SyncService) syncAll() {
 	logger.Info("Sync completed", zap.Int("address_count", len(addresses)))
 }
 
-// syncBatch syncs a batch of addresses concurrently
+// syncBatch 并发同步一批地址
 func (s *SyncService) syncBatch(ctx context.Context, addresses []models.Address) {
 	var wg sync.WaitGroup
 
@@ -136,15 +136,15 @@ func (s *SyncService) syncBatch(ctx context.Context, addresses []models.Address)
 	wg.Wait()
 }
 
-// SyncAddress syncs data for a specific address
+// SyncAddress 同步特定地址的数据
 func (s *SyncService) SyncAddress(ctx context.Context, addressID uint) error {
-	// Get address details
+	// 获取地址详情
 	address, err := s.addressRepo.GetByID(addressID)
 	if err != nil {
 		return fmt.Errorf("failed to get address: %w", err)
 	}
 
-	// Get wallet to check enabled chains
+	// 获取钱包以检查启用的链
 	wallet, err := s.walletRepo.GetByID(address.WalletID)
 	if err != nil {
 		return fmt.Errorf("failed to get wallet: %w", err)
@@ -156,19 +156,19 @@ func (s *SyncService) SyncAddress(ctx context.Context, addressID uint) error {
 		zap.Any("enabled_chains", wallet.EnabledChains),
 	)
 
-	// Determine which chains to query
+	// 确定要查询的链
 	var chainIDsToQuery []string
 	if len(wallet.EnabledChains) > 0 {
 		chainIDsToQuery = wallet.EnabledChains
 	}
 
-	// First, get and upsert chains
+	// 首先获取并更新插入链
 	chains, err := s.dataProvider.GetUsedChainList(ctx, address.Address)
 	if err != nil {
 		return fmt.Errorf("failed to get chain list: %w", err)
 	}
 
-	// Filter chains based on enabled chains
+	// 根据启用的链过滤链
 	if len(chainIDsToQuery) > 0 {
 		enabledChainMap := make(map[string]bool)
 		for _, chainID := range chainIDsToQuery {
@@ -184,7 +184,7 @@ func (s *SyncService) SyncAddress(ctx context.Context, addressID uint) error {
 		chains = filteredChains
 	}
 
-	// Convert to database models
+	// 转换为数据库模型
 	dbChains := make([]models.Chain, 0, len(chains))
 	for _, chain := range chains {
 		dbChains = append(dbChains, models.Chain{
@@ -195,21 +195,21 @@ func (s *SyncService) SyncAddress(ctx context.Context, addressID uint) error {
 		})
 	}
 
-	// Upsert chains first
+	// 首先更新插入链
 	if err := s.chainRepo.UpsertBatch(dbChains); err != nil {
 		return fmt.Errorf("failed to upsert chains: %w", err)
 	}
 
-	// Get token list from provider, optionally filtered by chains
+	// 从提供者获取代币列表，可选按链过滤
 	tokens, err := s.dataProvider.GetTokenList(ctx, address.Address, chainIDsToQuery)
 	if err != nil {
 		return fmt.Errorf("failed to get token list: %w", err)
 	}
 
-	// Filter out spam/scam tokens
+	// 过滤掉垃圾/欺诈代币
 	filteredTokens := filterSpamTokens(tokens)
 
-	// Convert to database models
+	// 转换为数据库模型
 	dbTokens := make([]models.Token, 0, len(filteredTokens))
 	for _, token := range filteredTokens {
 		dbTokens = append(dbTokens, models.Token{
@@ -226,12 +226,12 @@ func (s *SyncService) SyncAddress(ctx context.Context, addressID uint) error {
 		})
 	}
 
-	// Upsert tokens
+	// 更新插入代币
 	if err := s.tokenRepo.UpsertBatch(dbTokens); err != nil {
 		return fmt.Errorf("failed to upsert tokens: %w", err)
 	}
 
-	// Update last synced timestamp
+	// 更新最后同步时间戳
 	if err := s.addressRepo.UpdateLastSynced(addressID); err != nil {
 		return fmt.Errorf("failed to update last synced: %w", err)
 	}
@@ -244,7 +244,7 @@ func (s *SyncService) SyncAddress(ctx context.Context, addressID uint) error {
 	return nil
 }
 
-// SyncWallet syncs all addresses in a wallet
+// SyncWallet 同步钱包中的所有地址
 func (s *SyncService) SyncWallet(ctx context.Context, walletID uint) error {
 	addresses, err := s.addressRepo.GetByWalletID(walletID)
 	if err != nil {
@@ -264,7 +264,7 @@ func (s *SyncService) SyncWallet(ctx context.Context, walletID uint) error {
 	return nil
 }
 
-// filterSpamTokens filters out spam/scam tokens based on common patterns
+// filterSpamTokens 根据常见模式过滤掉垃圾/欺诈代币
 func filterSpamTokens(tokens []provider.TokenInfo) []provider.TokenInfo {
 	spamKeywords := []string{
 		"t.me/", "t.ly/", "fli.so/", "wr.do/", "www.",
@@ -276,7 +276,7 @@ func filterSpamTokens(tokens []provider.TokenInfo) []provider.TokenInfo {
 	for _, token := range tokens {
 		isSpam := false
 
-		// Check if symbol or name contains spam keywords
+		// 检查符号或名称是否包含垃圾关键词
 		symbolLower := strings.ToLower(token.Symbol)
 		nameLower := strings.ToLower(token.Name)
 
@@ -287,9 +287,9 @@ func filterSpamTokens(tokens []provider.TokenInfo) []provider.TokenInfo {
 			}
 		}
 
-		// Additional check: tokens with $0 value and suspicious patterns
+		// 额外检查：价值为 $0 且具有可疑模式的代币
 		if token.Price == 0 && token.USDValue == 0 {
-			// Check if it looks like a spam token (contains special characters, emojis, etc.)
+			// 检查是否看起来像垃圾代币（包含特殊字符、表情符号等）
 			if strings.Contains(token.Symbol, "✅") || strings.Contains(token.Name, "✅") {
 				isSpam = true
 			}

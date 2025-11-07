@@ -9,7 +9,7 @@ const apiClient = axios.create({
   }
 })
 
-// Wallets API
+// 钱包 API
 export const walletsAPI = {
   list: () => apiClient.get('/wallets'),
   get: (id) => apiClient.get(`/wallets/${id}`),
@@ -19,7 +19,7 @@ export const walletsAPI = {
   refresh: (id) => apiClient.post(`/wallets/${id}/refresh`)
 }
 
-// Addresses API
+// 地址 API
 export const addressesAPI = {
   list: (walletId) => {
     const params = walletId ? { wallet_id: walletId } : {}
@@ -32,12 +32,12 @@ export const addressesAPI = {
   refresh: (id) => apiClient.post(`/addresses/${id}/refresh`)
 }
 
-// Chains API
+// 链 API
 export const chainsAPI = {
   list: () => apiClient.get('/chains')
 }
 
-// RPC Nodes API
+// RPC节点 API
 export const rpcNodesAPI = {
   list: (chainId) => {
     const params = chainId ? { chain_id: chainId } : {}
