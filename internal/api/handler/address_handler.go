@@ -41,7 +41,7 @@ type CreateAddressRequest struct {
 
 // UpdateAddressRequest represents the request to update an address
 type UpdateAddressRequest struct {
-	Label string            `json:"label"`
+	Label string             `json:"label"`
 	Tags  models.StringSlice `json:"tags"`
 }
 

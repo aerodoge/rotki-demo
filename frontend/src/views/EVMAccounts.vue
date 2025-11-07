@@ -188,24 +188,285 @@
                         </div>
                       </td>
                     </tr>
-                    <!-- Token details header -->
-                    <tr v-if="address.tokens && address.tokens.length > 0" class="token-header-row">
+                    <!-- View Tabs for address tokens -->
+                    <tr v-if="address.tokens && address.tokens.length > 0" class="tabs-row">
                       <td colspan="6">
-                        <div class="token-detail token-header">
-                          <div class="token-icon-wrapper">Asset</div>
-                          <div class="token-info-detail"></div>
-                          <div class="token-location">Location</div>
-                          <div class="token-price">Price in {{ selectedCurrency }}</div>
-                          <div class="token-balance">Amount</div>
-                          <div class="token-value">{{ selectedCurrency }} Value</div>
+                        <div class="view-tabs">
+                          <button
+                            :class="[
+                              'tab-button',
+                              { active: addressViewMode[address.id] === 'aggregated' }
+                            ]"
+                            @click="setAddressViewMode(address.id, 'aggregated')"
+                          >
+                            Aggregated assets
+                          </button>
+                          <button
+                            :class="[
+                              'tab-button',
+                              { active: addressViewMode[address.id] === 'perChain' }
+                            ]"
+                            @click="setAddressViewMode(address.id, 'perChain')"
+                          >
+                            Per chain
+                          </button>
                         </div>
                       </td>
                     </tr>
-                    <TokenDetailRow
-                      v-for="token in address.tokens || []"
-                      :key="token.id"
-                      :token="token"
-                    />
+
+                    <!-- Aggregated view: show all tokens -->
+                    <template v-if="addressViewMode[address.id] === 'aggregated'">
+                      <!-- Token details header -->
+                      <tr
+                        v-if="address.tokens && address.tokens.length > 0"
+                        class="token-header-row"
+                      >
+                        <td colspan="6">
+                          <div class="token-detail token-header">
+                            <div class="token-icon-wrapper">Asset</div>
+                            <div class="token-info-detail"></div>
+                            <div class="token-location">Location</div>
+                            <div class="token-price">Price in {{ selectedCurrency }}</div>
+                            <div class="token-balance">Amount</div>
+                            <div class="token-value">{{ selectedCurrency }} Value</div>
+                          </div>
+                        </td>
+                      </tr>
+                      <TokenDetailRow
+                        v-for="token in getPaginatedTokens(address.id)"
+                        :key="token.id"
+                        :token="token"
+                      />
+                      <!-- Pagination controls -->
+                      <tr v-if="address.tokens && address.tokens.length > 0" class="pagination-row">
+                        <td colspan="6">
+                          <div class="pagination-controls">
+                            <div class="pagination-info">
+                              <span class="pagination-label">Rows per page:</span>
+                              <select
+                                v-model="tokenPagination[address.id].pageSize"
+                                @change="onPageSizeChange(address.id)"
+                                class="page-size-select"
+                              >
+                                <option :value="10">10</option>
+                                <option :value="20">20</option>
+                                <option :value="50">50</option>
+                                <option :value="100">100</option>
+                              </select>
+                              <span class="pagination-range">
+                                Items #
+                                {{ getStartIndex(address.id) }}-{{ getEndIndex(address.id) }} of
+                                {{ address.tokens.length }}
+                              </span>
+                              <span class="pagination-page">
+                                Page {{ tokenPagination[address.id]?.currentPage || 1 }} of
+                                {{ getTotalPages(address.id) }}
+                              </span>
+                            </div>
+                            <div class="pagination-buttons">
+                              <button
+                                @click="goToFirstPage(address.id)"
+                                :disabled="isFirstPage(address.id)"
+                                class="pagination-btn"
+                                title="First page"
+                              >
+                                ⟨⟨
+                              </button>
+                              <button
+                                @click="goToPreviousPage(address.id)"
+                                :disabled="isFirstPage(address.id)"
+                                class="pagination-btn"
+                                title="Previous page"
+                              >
+                                ⟨
+                              </button>
+                              <button
+                                @click="goToNextPage(address.id)"
+                                :disabled="isLastPage(address.id)"
+                                class="pagination-btn"
+                                title="Next page"
+                              >
+                                ⟩
+                              </button>
+                              <button
+                                @click="goToLastPage(address.id)"
+                                :disabled="isLastPage(address.id)"
+                                class="pagination-btn"
+                                title="Last page"
+                              >
+                                ⟩⟩
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </template>
+
+                    <!-- Per Chain view: show tokens grouped by chain -->
+                    <template v-if="addressViewMode[address.id] === 'perChain'">
+                      <template
+                        v-for="chain in getAddressChainGroups(address.id)"
+                        :key="chain.chainId"
+                      >
+                        <tr
+                          class="chain-group-row"
+                          @click="toggleAddressChain(address.id, chain.chainId)"
+                        >
+                          <td colspan="6">
+                            <div class="chain-group-header">
+                              <span class="expand-icon">{{
+                                expandedAddressChains[`${address.id}_${chain.chainId}`] ? '▼' : '▶'
+                              }}</span>
+                              <img
+                                v-if="chain.logoUrl && !failedChainImages[chain.chainId]"
+                                :src="chain.logoUrl"
+                                :alt="chain.name"
+                                class="chain-logo-small"
+                                @error="failedChainImages[chain.chainId] = true"
+                              />
+                              <div v-else class="chain-logo-placeholder-tiny">
+                                {{ (chain.name || chain.chainId || '?').charAt(0).toUpperCase() }}
+                              </div>
+                              <span class="chain-name">{{ chain.name || chain.chainId }}</span>
+                              <div class="chain-assets">
+                                <div class="asset-icons">
+                                  <div
+                                    v-for="token in chain.tokens.slice(0, 2)"
+                                    :key="token.id"
+                                    class="token-logo-wrapper-small"
+                                  >
+                                    <img
+                                      v-if="
+                                        token.logo_url &&
+                                        token.logo_url.length > 0 &&
+                                        !failedImages[token.id]
+                                      "
+                                      :src="token.logo_url"
+                                      :alt="token.symbol"
+                                      :title="token.symbol"
+                                      class="asset-token-logo-small"
+                                      @error="handleImageError($event, token.id)"
+                                    />
+                                    <div
+                                      v-else
+                                      class="asset-token-fallback-small"
+                                      :title="token.symbol"
+                                    >
+                                      {{ token.symbol.substring(0, 2) }}
+                                    </div>
+                                  </div>
+                                  <span v-if="chain.tokens.length > 2" class="asset-count-small">
+                                    +{{ chain.tokens.length - 2 }}
+                                  </span>
+                                </div>
+                              </div>
+                              <span class="chain-value">
+                                {{ currencySymbols[selectedCurrency]
+                                }}{{ formatValue(chain.totalValue) }}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                        <template v-if="expandedAddressChains[`${address.id}_${chain.chainId}`]">
+                          <!-- Chain token header -->
+                          <tr class="token-header-row">
+                            <td colspan="6">
+                              <div class="token-detail token-header">
+                                <div class="token-icon-wrapper">Asset</div>
+                                <div class="token-info-detail"></div>
+                                <div class="token-location">Location</div>
+                                <div class="token-price">Price in {{ selectedCurrency }}</div>
+                                <div class="token-balance">Amount</div>
+                                <div class="token-value">{{ selectedCurrency }} Value</div>
+                              </div>
+                            </td>
+                          </tr>
+                          <TokenDetailRow
+                            v-for="token in getPaginatedAddressChainTokens(
+                              address.id,
+                              chain.chainId
+                            )"
+                            :key="token.id"
+                            :token="token"
+                          />
+                          <!-- Chain pagination -->
+                          <tr class="pagination-row">
+                            <td colspan="6">
+                              <div class="pagination-controls">
+                                <div class="pagination-info">
+                                  <span class="pagination-label">Rows per page:</span>
+                                  <select
+                                    v-model="
+                                      addressChainPagination[`${address.id}_${chain.chainId}`]
+                                        .pageSize
+                                    "
+                                    @change="
+                                      onAddressChainPageSizeChange(address.id, chain.chainId)
+                                    "
+                                    class="page-size-select"
+                                  >
+                                    <option :value="10">10</option>
+                                    <option :value="20">20</option>
+                                    <option :value="50">50</option>
+                                    <option :value="100">100</option>
+                                  </select>
+                                  <span class="pagination-range">
+                                    Items #
+                                    {{ getAddressChainStartIndex(address.id, chain.chainId) }}-{{
+                                      getAddressChainEndIndex(address.id, chain.chainId)
+                                    }}
+                                    of {{ chain.tokens.length }}
+                                  </span>
+                                  <span class="pagination-page">
+                                    Page
+                                    {{
+                                      addressChainPagination[`${address.id}_${chain.chainId}`]
+                                        ?.currentPage || 1
+                                    }}
+                                    of
+                                    {{ getAddressChainTotalPages(address.id, chain.chainId) }}
+                                  </span>
+                                </div>
+                                <div class="pagination-buttons">
+                                  <button
+                                    @click="goToAddressChainFirstPage(address.id, chain.chainId)"
+                                    :disabled="isAddressChainFirstPage(address.id, chain.chainId)"
+                                    class="pagination-btn"
+                                    title="First page"
+                                  >
+                                    ⟨⟨
+                                  </button>
+                                  <button
+                                    @click="goToAddressChainPreviousPage(address.id, chain.chainId)"
+                                    :disabled="isAddressChainFirstPage(address.id, chain.chainId)"
+                                    class="pagination-btn"
+                                    title="Previous page"
+                                  >
+                                    ⟨
+                                  </button>
+                                  <button
+                                    @click="goToAddressChainNextPage(address.id, chain.chainId)"
+                                    :disabled="isAddressChainLastPage(address.id, chain.chainId)"
+                                    class="pagination-btn"
+                                    title="Next page"
+                                  >
+                                    ⟩
+                                  </button>
+                                  <button
+                                    @click="goToAddressChainLastPage(address.id, chain.chainId)"
+                                    :disabled="isAddressChainLastPage(address.id, chain.chainId)"
+                                    class="pagination-btn"
+                                    title="Last page"
+                                  >
+                                    ⟩⟩
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        </template>
+                      </template>
+                    </template>
                   </template>
                 </template>
               </template>
@@ -504,6 +765,7 @@ const availableChains = ref([])
 const {
   currencySymbols,
   selectedCurrency,
+  exchangeRates,
   formatValue,
   formatTokenPrice,
   formatTokenValue,
@@ -513,8 +775,12 @@ const {
 
 const expandedWallets = reactive({})
 const expandedAddresses = reactive({})
+const addressViewMode = reactive({}) // Track view mode for each address ('aggregated' or 'perChain')
+const expandedAddressChains = reactive({}) // Track expanded chains for each address
 const failedImages = reactive({}) // Track failed image loads
 const failedChainImages = reactive({}) // Track failed chain logo loads
+const tokenPagination = reactive({}) // Track pagination state for each address
+const addressChainPagination = reactive({}) // Track pagination state for each address's chain
 const showAddWalletModal = ref(false)
 const showEditWalletModal = ref(false)
 const showAddAddressModal = ref(false)
@@ -589,6 +855,453 @@ const toggleAddress = (addressId) => {
   console.log('toggleAddress called with:', addressId)
   expandedAddresses[addressId] = !expandedAddresses[addressId]
   console.log('After:', expandedAddresses)
+
+  // Initialize view mode for this address (default to aggregated)
+  if (!addressViewMode[addressId]) {
+    addressViewMode[addressId] = 'aggregated'
+  }
+
+  // Initialize pagination for this address if not exists
+  if (!tokenPagination[addressId]) {
+    tokenPagination[addressId] = {
+      currentPage: 1,
+      pageSize: 10
+    }
+  }
+}
+
+// Set view mode for a specific address
+const setAddressViewMode = (addressId, mode) => {
+  addressViewMode[addressId] = mode
+}
+
+// Pagination helper functions
+const initPagination = (addressId) => {
+  if (!tokenPagination[addressId]) {
+    tokenPagination[addressId] = {
+      currentPage: 1,
+      pageSize: 10
+    }
+  }
+}
+
+const getPaginatedTokens = (addressId) => {
+  const address = addresses.value.find((a) => a.id === addressId)
+  if (!address || !address.tokens) return []
+
+  initPagination(addressId)
+  const pagination = tokenPagination[addressId]
+
+  // Sort tokens by value in selected currency (descending order)
+  const sortedTokens = [...address.tokens].sort((a, b) => {
+    // Get USD value first
+    const usdValueA = a.usd_value || 0
+    const usdValueB = b.usd_value || 0
+
+    // Convert to selected currency using exchange rates
+    const rate = exchangeRates.value[selectedCurrency.value] || 1
+    const valueA = rate === 0 ? usdValueA : usdValueA / rate
+    const valueB = rate === 0 ? usdValueB : usdValueB / rate
+
+    return valueB - valueA
+  })
+
+  const start = (pagination.currentPage - 1) * pagination.pageSize
+  const end = start + pagination.pageSize
+
+  return sortedTokens.slice(start, end)
+}
+
+const getTotalPages = (addressId) => {
+  const address = addresses.value.find((a) => a.id === addressId)
+  if (!address || !address.tokens) return 1
+
+  initPagination(addressId)
+  const pagination = tokenPagination[addressId]
+  return Math.ceil(address.tokens.length / pagination.pageSize)
+}
+
+const getStartIndex = (addressId) => {
+  const address = addresses.value.find((a) => a.id === addressId)
+  if (!address || !address.tokens || address.tokens.length === 0) return 0
+
+  initPagination(addressId)
+  const pagination = tokenPagination[addressId]
+  return (pagination.currentPage - 1) * pagination.pageSize + 1
+}
+
+const getEndIndex = (addressId) => {
+  const address = addresses.value.find((a) => a.id === addressId)
+  if (!address || !address.tokens) return 0
+
+  initPagination(addressId)
+  const pagination = tokenPagination[addressId]
+  const end = pagination.currentPage * pagination.pageSize
+  return Math.min(end, address.tokens.length)
+}
+
+const isFirstPage = (addressId) => {
+  initPagination(addressId)
+  return tokenPagination[addressId].currentPage === 1
+}
+
+const isLastPage = (addressId) => {
+  initPagination(addressId)
+  return tokenPagination[addressId].currentPage >= getTotalPages(addressId)
+}
+
+const goToFirstPage = (addressId) => {
+  initPagination(addressId)
+  tokenPagination[addressId].currentPage = 1
+}
+
+const goToPreviousPage = (addressId) => {
+  initPagination(addressId)
+  if (tokenPagination[addressId].currentPage > 1) {
+    tokenPagination[addressId].currentPage--
+  }
+}
+
+const goToNextPage = (addressId) => {
+  initPagination(addressId)
+  if (tokenPagination[addressId].currentPage < getTotalPages(addressId)) {
+    tokenPagination[addressId].currentPage++
+  }
+}
+
+const goToLastPage = (addressId) => {
+  initPagination(addressId)
+  tokenPagination[addressId].currentPage = getTotalPages(addressId)
+}
+
+const onPageSizeChange = (addressId) => {
+  initPagination(addressId)
+  // Reset to first page when page size changes
+  tokenPagination[addressId].currentPage = 1
+}
+
+// Address chain grouping functions
+const getAddressChainGroups = (addressId) => {
+  const address = addresses.value.find((a) => a.id === addressId)
+  if (!address || !address.tokens) return []
+
+  const chainMap = new Map()
+
+  // Collect tokens by chain for this address
+  address.tokens.forEach((token) => {
+    if (!chainMap.has(token.chain_id)) {
+      const chainInfo = availableChains.value.find((c) => c.id === token.chain_id)
+      chainMap.set(token.chain_id, {
+        chainId: token.chain_id,
+        name: chainInfo?.name || token.chain_id,
+        logoUrl: chainInfo?.logo_url || '',
+        tokens: [],
+        totalValue: 0
+      })
+    }
+    chainMap.get(token.chain_id).tokens.push(token)
+  })
+
+  // Calculate total value and sort tokens
+  const chains = Array.from(chainMap.values()).map((chain) => {
+    const sortedTokens = [...chain.tokens].sort((a, b) => {
+      const usdValueA = a.usd_value || 0
+      const usdValueB = b.usd_value || 0
+      const rate = exchangeRates.value[selectedCurrency.value] || 1
+      const valueA = rate === 0 ? usdValueA : usdValueA / rate
+      const valueB = rate === 0 ? usdValueB : usdValueB / rate
+      return valueB - valueA
+    })
+
+    chain.tokens = sortedTokens
+    chain.totalValue = chain.tokens.reduce((sum, token) => sum + (token.usd_value || 0), 0)
+    return chain
+  })
+
+  // Sort chains by total value (descending)
+  return chains.sort((a, b) => b.totalValue - a.totalValue)
+}
+
+const toggleAddressChain = (addressId, chainId) => {
+  const key = `${addressId}_${chainId}`
+  expandedAddressChains[key] = !expandedAddressChains[key]
+
+  // Initialize pagination
+  if (!addressChainPagination[key]) {
+    addressChainPagination[key] = {
+      currentPage: 1,
+      pageSize: 10
+    }
+  }
+}
+
+// Address chain pagination functions
+const initAddressChainPagination = (addressId, chainId) => {
+  const key = `${addressId}_${chainId}`
+  if (!addressChainPagination[key]) {
+    addressChainPagination[key] = {
+      currentPage: 1,
+      pageSize: 10
+    }
+  }
+}
+
+const getPaginatedAddressChainTokens = (addressId, chainId) => {
+  const chains = getAddressChainGroups(addressId)
+  const chain = chains.find((c) => c.chainId === chainId)
+  if (!chain || !chain.tokens) return []
+
+  initAddressChainPagination(addressId, chainId)
+  const key = `${addressId}_${chainId}`
+  const pagination = addressChainPagination[key]
+  const start = (pagination.currentPage - 1) * pagination.pageSize
+  const end = start + pagination.pageSize
+
+  return chain.tokens.slice(start, end)
+}
+
+const getAddressChainTotalPages = (addressId, chainId) => {
+  const chains = getAddressChainGroups(addressId)
+  const chain = chains.find((c) => c.chainId === chainId)
+  if (!chain || !chain.tokens) return 1
+
+  initAddressChainPagination(addressId, chainId)
+  const key = `${addressId}_${chainId}`
+  const pagination = addressChainPagination[key]
+  return Math.ceil(chain.tokens.length / pagination.pageSize)
+}
+
+const getAddressChainStartIndex = (addressId, chainId) => {
+  const chains = getAddressChainGroups(addressId)
+  const chain = chains.find((c) => c.chainId === chainId)
+  if (!chain || !chain.tokens || chain.tokens.length === 0) return 0
+
+  initAddressChainPagination(addressId, chainId)
+  const key = `${addressId}_${chainId}`
+  const pagination = addressChainPagination[key]
+  return (pagination.currentPage - 1) * pagination.pageSize + 1
+}
+
+const getAddressChainEndIndex = (addressId, chainId) => {
+  const chains = getAddressChainGroups(addressId)
+  const chain = chains.find((c) => c.chainId === chainId)
+  if (!chain || !chain.tokens) return 0
+
+  initAddressChainPagination(addressId, chainId)
+  const key = `${addressId}_${chainId}`
+  const pagination = addressChainPagination[key]
+  const end = pagination.currentPage * pagination.pageSize
+  return Math.min(end, chain.tokens.length)
+}
+
+const isAddressChainFirstPage = (addressId, chainId) => {
+  initAddressChainPagination(addressId, chainId)
+  const key = `${addressId}_${chainId}`
+  return addressChainPagination[key].currentPage === 1
+}
+
+const isAddressChainLastPage = (addressId, chainId) => {
+  initAddressChainPagination(addressId, chainId)
+  return (
+    addressChainPagination[`${addressId}_${chainId}`].currentPage >=
+    getAddressChainTotalPages(addressId, chainId)
+  )
+}
+
+const goToAddressChainFirstPage = (addressId, chainId) => {
+  initAddressChainPagination(addressId, chainId)
+  const key = `${addressId}_${chainId}`
+  addressChainPagination[key].currentPage = 1
+}
+
+const goToAddressChainPreviousPage = (addressId, chainId) => {
+  initAddressChainPagination(addressId, chainId)
+  const key = `${addressId}_${chainId}`
+  if (addressChainPagination[key].currentPage > 1) {
+    addressChainPagination[key].currentPage--
+  }
+}
+
+const goToAddressChainNextPage = (addressId, chainId) => {
+  initAddressChainPagination(addressId, chainId)
+  const key = `${addressId}_${chainId}`
+  if (addressChainPagination[key].currentPage < getAddressChainTotalPages(addressId, chainId)) {
+    addressChainPagination[key].currentPage++
+  }
+}
+
+const goToAddressChainLastPage = (addressId, chainId) => {
+  initAddressChainPagination(addressId, chainId)
+  const key = `${addressId}_${chainId}`
+  addressChainPagination[key].currentPage = getAddressChainTotalPages(addressId, chainId)
+}
+
+const onAddressChainPageSizeChange = (addressId, chainId) => {
+  initAddressChainPagination(addressId, chainId)
+  const key = `${addressId}_${chainId}`
+  addressChainPagination[key].currentPage = 1
+}
+
+// Chain grouping functions
+const getChainGroups = () => {
+  const chainMap = new Map()
+
+  // Collect all tokens from all addresses
+  addresses.value.forEach((address) => {
+    if (address.tokens && address.tokens.length > 0) {
+      address.tokens.forEach((token) => {
+        if (!chainMap.has(token.chain_id)) {
+          // Find chain info from available chains
+          const chainInfo = availableChains.value.find((c) => c.id === token.chain_id)
+          chainMap.set(token.chain_id, {
+            chainId: token.chain_id,
+            name: chainInfo?.name || token.chain_id,
+            logoUrl: chainInfo?.logo_url || '',
+            tokens: [],
+            totalValue: 0
+          })
+        }
+        chainMap.get(token.chain_id).tokens.push(token)
+      })
+    }
+  })
+
+  // Calculate total value for each chain and sort tokens by value
+  const chains = Array.from(chainMap.values()).map((chain) => {
+    // Sort tokens by value in selected currency (descending)
+    const sortedTokens = [...chain.tokens].sort((a, b) => {
+      const usdValueA = a.usd_value || 0
+      const usdValueB = b.usd_value || 0
+      const rate = exchangeRates.value[selectedCurrency.value] || 1
+      const valueA = rate === 0 ? usdValueA : usdValueA / rate
+      const valueB = rate === 0 ? usdValueB : usdValueB / rate
+      return valueB - valueA
+    })
+
+    chain.tokens = sortedTokens
+    chain.totalValue = chain.tokens.reduce((sum, token) => sum + (token.usd_value || 0), 0)
+    return chain
+  })
+
+  // Sort chains by total value (descending)
+  return chains.sort((a, b) => b.totalValue - a.totalValue)
+}
+
+const toggleChain = (chainId) => {
+  expandedChains[chainId] = !expandedChains[chainId]
+
+  // Initialize pagination for this chain if not exists
+  if (!chainPagination[chainId]) {
+    chainPagination[chainId] = {
+      currentPage: 1,
+      pageSize: 10
+    }
+  }
+}
+
+const refreshChain = async (chainId) => {
+  // Refresh all addresses that have tokens on this chain
+  const addressesToRefresh = addresses.value.filter(
+    (addr) => addr.tokens && addr.tokens.some((token) => token.chain_id === chainId)
+  )
+
+  for (const address of addressesToRefresh) {
+    await refreshAddress(address.id)
+  }
+}
+
+// Chain pagination functions
+const initChainPagination = (chainId) => {
+  if (!chainPagination[chainId]) {
+    chainPagination[chainId] = {
+      currentPage: 1,
+      pageSize: 10
+    }
+  }
+}
+
+const getPaginatedChainTokens = (chainId) => {
+  const chains = getChainGroups()
+  const chain = chains.find((c) => c.chainId === chainId)
+  if (!chain || !chain.tokens) return []
+
+  initChainPagination(chainId)
+  const pagination = chainPagination[chainId]
+  const start = (pagination.currentPage - 1) * pagination.pageSize
+  const end = start + pagination.pageSize
+
+  return chain.tokens.slice(start, end)
+}
+
+const getChainTotalPages = (chainId) => {
+  const chains = getChainGroups()
+  const chain = chains.find((c) => c.chainId === chainId)
+  if (!chain || !chain.tokens) return 1
+
+  initChainPagination(chainId)
+  const pagination = chainPagination[chainId]
+  return Math.ceil(chain.tokens.length / pagination.pageSize)
+}
+
+const getChainStartIndex = (chainId) => {
+  const chains = getChainGroups()
+  const chain = chains.find((c) => c.chainId === chainId)
+  if (!chain || !chain.tokens || chain.tokens.length === 0) return 0
+
+  initChainPagination(chainId)
+  const pagination = chainPagination[chainId]
+  return (pagination.currentPage - 1) * pagination.pageSize + 1
+}
+
+const getChainEndIndex = (chainId) => {
+  const chains = getChainGroups()
+  const chain = chains.find((c) => c.chainId === chainId)
+  if (!chain || !chain.tokens) return 0
+
+  initChainPagination(chainId)
+  const pagination = chainPagination[chainId]
+  const end = pagination.currentPage * pagination.pageSize
+  return Math.min(end, chain.tokens.length)
+}
+
+const isChainFirstPage = (chainId) => {
+  initChainPagination(chainId)
+  return chainPagination[chainId].currentPage === 1
+}
+
+const isChainLastPage = (chainId) => {
+  initChainPagination(chainId)
+  return chainPagination[chainId].currentPage >= getChainTotalPages(chainId)
+}
+
+const goToChainFirstPage = (chainId) => {
+  initChainPagination(chainId)
+  chainPagination[chainId].currentPage = 1
+}
+
+const goToChainPreviousPage = (chainId) => {
+  initChainPagination(chainId)
+  if (chainPagination[chainId].currentPage > 1) {
+    chainPagination[chainId].currentPage--
+  }
+}
+
+const goToChainNextPage = (chainId) => {
+  initChainPagination(chainId)
+  if (chainPagination[chainId].currentPage < getChainTotalPages(chainId)) {
+    chainPagination[chainId].currentPage++
+  }
+}
+
+const goToChainLastPage = (chainId) => {
+  initChainPagination(chainId)
+  chainPagination[chainId].currentPage = getChainTotalPages(chainId)
+}
+
+const onChainPageSizeChange = (chainId) => {
+  initChainPagination(chainId)
+  // Reset to first page when page size changes
+  chainPagination[chainId].currentPage = 1
 }
 
 const getAddressesByWallet = (walletId) => {
@@ -872,12 +1585,168 @@ const removeEditAddressTag = (index) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .actions-left {
   display: flex;
   gap: 12px;
+}
+
+/* View Tabs */
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0;
+}
+
+.tab-button {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  bottom: -2px;
+}
+
+.tab-button:hover {
+  color: #1f2937;
+  background: #f9fafb;
+}
+
+.tab-button.active {
+  color: #4f46e5;
+  border-bottom-color: #4f46e5;
+  font-weight: 600;
+}
+
+.tabs-row {
+  background: #fafbfc;
+}
+
+.tabs-row td {
+  padding: 0 !important;
+}
+
+.chain-group-row {
+  background: #f9fafb;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.chain-group-row:hover {
+  background: #f3f4f6;
+}
+
+.chain-group-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  gap: 12px;
+}
+
+.chain-logo-small {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.chain-logo-placeholder-tiny {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.chain-assets {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.chain-value {
+  font-weight: 600;
+  color: #1f2937;
+  min-width: 150px;
+  text-align: right;
+}
+
+.token-logo-wrapper-small {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.asset-token-logo-small {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+  background: white;
+}
+
+.asset-token-fallback-small {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #4f46e5;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  border: 1px solid #e5e7eb;
+  text-transform: uppercase;
+}
+
+.asset-count-small {
+  padding: 2px 6px;
+  background: #e5e7eb;
+  color: #6b7280;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.chain-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 12px;
+}
+
+.chain-logo-placeholder-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  margin-right: 12px;
+  flex-shrink: 0;
 }
 
 .btn-primary,
@@ -1429,5 +2298,98 @@ const removeEditAddressTag = (index) => {
   flex-shrink: 0;
   accent-color: #3b82f6;
   margin-right: 8px;
+}
+
+/* Pagination styles */
+.pagination-row {
+  background: #fafafa;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pagination-row td {
+  padding: 12px 20px;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.pagination-label {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.page-size-select {
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  color: #1f2937;
+}
+
+.page-size-select:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.pagination-range {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.pagination-page {
+  font-weight: 600;
+  color: #4f46e5;
+  padding: 4px 12px;
+  background: #eef2ff;
+  border-radius: 6px;
+}
+
+.pagination-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.pagination-btn {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #6b7280;
+  transition: all 0.2s;
+  min-width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #1f2937;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-btn:active:not(:disabled) {
+  background: #e5e7eb;
 }
 </style>

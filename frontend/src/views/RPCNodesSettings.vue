@@ -6,7 +6,7 @@
         <h2>RPC node setting</h2>
         <p class="subtitle">Manage and view your RPC node.</p>
       </div>
-      <button class="btn-add-node" @click="showAddNodeModal = true">+ Add Node</button>
+      <button class="btn-add-node" @click="openAddNodeModal(activeChain)">+ Add Node</button>
     </div>
 
     <!-- Chain Tabs -->
@@ -37,7 +37,7 @@
 
       <div v-else-if="currentChainNodes.length === 0" class="empty-state">
         <p>No RPC nodes configured for this chain.</p>
-        <button class="btn-secondary" @click="showAddNodeModal = true">Add your first node</button>
+        <button class="btn-secondary" @click="openAddNodeModal(activeChain)">Add your first node</button>
       </div>
 
       <div v-else class="nodes-list">
@@ -217,10 +217,10 @@ const loadRPCNodes = async () => {
   }
 }
 
-const resetForm = () => {
+const resetForm = (preselectedChainId = null) => {
   nodeForm.value = {
     id: null,
-    chain_id: activeChain.value,
+    chain_id: preselectedChainId || activeChain.value,
     name: '',
     url: '',
     weight: 100,
@@ -229,6 +229,11 @@ const resetForm = () => {
     is_enabled: true
   }
   nodeFormError.value = ''
+}
+
+const openAddNodeModal = (chainId = null) => {
+  resetForm(chainId)
+  showAddNodeModal.value = true
 }
 
 const closeModals = () => {

@@ -56,6 +56,12 @@ func main() {
 	chainRepo := repository.NewChainRepository(db)
 	rpcNodeRepo := repository.NewRPCNodeRepository(db)
 
+	// Initialize all chains from chains.json
+	chainInitializer := service.NewChainInitializer(chainRepo)
+	if err := chainInitializer.InitializeAllChainsFromDefault(); err != nil {
+		logger.Warn("Failed to initialize chains from file", zap.Error(err))
+	}
+
 	// Initialize data provider
 	dataProvider := debank.NewDeBankProvider(&cfg.DeBank)
 
