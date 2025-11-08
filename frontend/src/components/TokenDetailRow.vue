@@ -1,7 +1,9 @@
 <template>
   <tr class="bg-muted/5 border-b hover:bg-muted/10 transition-colors">
     <td colspan="6" class="p-0">
-      <div class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 px-4 py-3 items-center">
+      <div
+        class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 pl-[52px] pr-4 py-3 items-center"
+      >
         <!-- Token Icon with Chain Badge -->
         <div class="relative w-10 h-10">
           <div

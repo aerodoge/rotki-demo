@@ -272,23 +272,21 @@
                       class="bg-muted/30 border-b hover:bg-muted/50 cursor-pointer transition-all group"
                       @click="toggleAddress(address.id)"
                     >
-                      <td class="px-4 py-3 pl-12">
-                        <div class="flex items-center gap-3">
+                      <td class="px-4 py-3 pl-8">
+                        <div class="flex items-center gap-2">
                           <span
                             class="text-xs text-muted-foreground transform transition-transform group-hover:scale-110"
                             :class="{ 'rotate-90': expandedAddresses[address.id] }"
                           >
                             ▶
                           </span>
-                          <Avatar
-                            class="h-7 w-7 ring-1 ring-primary/20 group-hover:ring-primary/40 transition-all"
+                          <div
+                            class="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 group-hover:ring-primary/40 transition-all"
                           >
-                            <AvatarFallback
-                              class="text-xs bg-primary/20 text-primary font-semibold"
-                            >
+                            <span class="text-xs text-primary font-semibold">
                               {{ address.label?.[0]?.toUpperCase() || 'A' }}
-                            </AvatarFallback>
-                          </Avatar>
+                            </span>
+                          </div>
                           <div class="flex flex-col">
                             <span
                               class="text-sm font-medium group-hover:text-primary transition-colors"
@@ -505,7 +503,7 @@
                         >
                           <td colspan="6" class="p-0">
                             <div
-                              class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 px-4 py-3 text-xs font-medium text-muted-foreground uppercase"
+                              class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 pl-[52px] pr-4 py-3 text-xs font-medium text-muted-foreground uppercase"
                             >
                               <div>Asset</div>
                               <div></div>
@@ -619,7 +617,7 @@
                             class="bg-muted/20 hover:bg-muted/30 cursor-pointer transition-colors"
                             @click="toggleAddressChain(address.id, chain.chainId)"
                           >
-                            <td colspan="6" class="px-4 py-3">
+                            <td class="pl-12 pr-4 py-3">
                               <div class="flex items-center gap-3">
                                 <span class="text-xs text-muted-foreground">
                                   {{
@@ -642,45 +640,52 @@
                                   {{ (chain.name || chain.chainId || '?').charAt(0).toUpperCase() }}
                                 </div>
                                 <span class="font-medium">{{ chain.name || chain.chainId }}</span>
-                                <div class="flex-1 flex items-center justify-center gap-1">
+                              </div>
+                            </td>
+                            <td class="px-4 py-3"></td>
+                            <td class="px-4 py-3"></td>
+                            <td class="px-4 py-3">
+                              <div class="flex items-center gap-1">
+                                <div
+                                  v-for="token in chain.tokens.slice(0, 2)"
+                                  :key="token.id"
+                                  class="w-6 h-6"
+                                >
+                                  <img
+                                    v-if="
+                                      token.logo_url &&
+                                      token.logo_url.length > 0 &&
+                                      !failedImages[token.id]
+                                    "
+                                    :src="token.logo_url"
+                                    :alt="token.symbol"
+                                    :title="token.symbol"
+                                    class="w-6 h-6 rounded-full border object-cover"
+                                    @error="handleImageError($event, token.id)"
+                                  />
                                   <div
-                                    v-for="token in chain.tokens.slice(0, 2)"
-                                    :key="token.id"
-                                    class="w-6 h-6"
+                                    v-else
+                                    class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
+                                    :title="token.symbol"
                                   >
-                                    <img
-                                      v-if="
-                                        token.logo_url &&
-                                        token.logo_url.length > 0 &&
-                                        !failedImages[token.id]
-                                      "
-                                      :src="token.logo_url"
-                                      :alt="token.symbol"
-                                      :title="token.symbol"
-                                      class="w-6 h-6 rounded-full border object-cover"
-                                      @error="handleImageError($event, token.id)"
-                                    />
-                                    <div
-                                      v-else
-                                      class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
-                                      :title="token.symbol"
-                                    >
-                                      {{ token.symbol.substring(0, 2) }}
-                                    </div>
+                                    {{ token.symbol.substring(0, 2) }}
                                   </div>
-                                  <span
-                                    v-if="chain.tokens.length > 2"
-                                    class="text-xs text-muted-foreground"
-                                  >
-                                    +{{ chain.tokens.length - 2 }}
-                                  </span>
                                 </div>
-                                <span class="font-mono font-semibold">
-                                  {{ currencySymbols[selectedCurrency]
-                                  }}{{ formatValue(chain.totalValue) }}
+                                <span
+                                  v-if="chain.tokens.length > 2"
+                                  class="text-xs text-muted-foreground"
+                                >
+                                  +{{ chain.tokens.length - 2 }}
                                 </span>
                               </div>
                             </td>
+                            <td class="px-4 py-3 text-right">
+                              <span class="font-mono font-semibold">
+                                {{ currencySymbols[selectedCurrency]
+                                }}{{ formatValue(chain.totalValue) }}
+                              </span>
+                            </td>
+                            <td class="px-4 py-3"></td>
                           </tr>
 
                           <!-- Expanded Chain Tokens -->
@@ -689,7 +694,7 @@
                             <tr class="bg-muted/30 border-b">
                               <td colspan="6" class="p-0">
                                 <div
-                                  class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 px-4 py-3 text-xs font-medium text-muted-foreground uppercase"
+                                  class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 pl-[52px] pr-4 py-3 text-xs font-medium text-muted-foreground uppercase"
                                 >
                                   <div>Asset</div>
                                   <div></div>
