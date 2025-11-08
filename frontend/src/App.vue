@@ -7,7 +7,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import Sidebar from './components/Sidebar.vue'
 </script>
 
@@ -21,6 +21,6 @@ import Sidebar from './components/Sidebar.vue'
 .main-content {
   flex: 1;
   overflow-y: auto;
-  background: #f5f5f5;
+  background: hsl(var(--background));
 }
 </style>

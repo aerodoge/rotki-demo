@@ -1,174 +1,244 @@
 <template>
-  <div class="rpc-nodes-settings">
-    <!-- 标题部分 -->
-    <div class="settings-header">
+  <div class="container mx-auto p-6 space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
       <div>
-        <h2>RPC node setting</h2>
-        <p class="subtitle">Manage and view your RPC node.</p>
+        <h1 class="text-3xl font-bold tracking-tight">RPC Node Settings</h1>
+        <p class="text-muted-foreground">Manage and view your RPC nodes</p>
       </div>
-      <button class="btn-add-node" @click="openAddNodeModal(activeChain)">+ Add Node</button>
+      <Button @click="openAddNodeModal(activeChain)">
+        <span class="mr-2">+</span>
+        Add Node
+      </Button>
     </div>
 
-    <!-- 链标签页 -->
-    <div class="chain-tabs-container">
-      <div class="chain-tabs">
-        <button
-          v-for="chain in supportedChains"
-          :key="chain.id"
-          :class="['chain-tab', { active: activeChain === chain.id }]"
-          @click="activeChain = chain.id"
+    <!-- Chain Tabs -->
+    <Tabs v-model="activeChain" class="w-full">
+      <TabsList>
+        <TabsTrigger v-for="chain in supportedChains" :key="chain.id" :value="chain.id">
+          <img
+            v-if="chain.logo_url"
+            :src="chain.logo_url"
+            :alt="chain.name"
+            class="w-4 h-4 mr-2 rounded-full"
+          />
+          {{ chain.name }}
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
+
+    <!-- RPC Nodes Table -->
+    <Card>
+      <CardHeader>
+        <CardTitle>Nodes</CardTitle>
+        <CardDescription>View and manage RPC nodes for {{ activeChainName }}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div v-if="loading" class="flex items-center justify-center py-12">
+          <div class="text-muted-foreground">Loading nodes...</div>
+        </div>
+
+        <div
+          v-else-if="currentChainNodes.length === 0"
+          class="flex flex-col items-center justify-center py-12 space-y-4"
         >
-          <img v-if="chain.logo_url" :src="chain.logo_url" :alt="chain.name" class="chain-icon" />
-          <span>{{ chain.name }}</span>
-        </button>
-      </div>
-    </div>
+          <div class="text-muted-foreground">No RPC nodes configured for this chain.</div>
+          <Button variant="outline" @click="openAddNodeModal(activeChain)">
+            Add your first node
+          </Button>
+        </div>
 
-    <!-- RPC节点表格 -->
-    <div class="nodes-table-container">
-      <div class="nodes-table-header">
-        <div class="col-node">Node</div>
-        <div class="col-weight">Node Weight</div>
-        <div class="col-connectivity">Connectivity</div>
-        <div class="col-actions"></div>
-      </div>
+        <div v-else class="space-y-4">
+          <!-- Table Header -->
+          <div
+            class="grid grid-cols-12 gap-4 px-4 py-2 border-b text-sm font-medium text-muted-foreground"
+          >
+            <div class="col-span-4">Node</div>
+            <div class="col-span-2">Weight</div>
+            <div class="col-span-3">Connectivity</div>
+            <div class="col-span-3 text-right">Actions</div>
+          </div>
 
-      <div v-if="loading" class="loading-state">Loading nodes...</div>
+          <!-- Table Rows -->
+          <div
+            v-for="node in currentChainNodes"
+            :key="node.id"
+            class="grid grid-cols-12 gap-4 px-4 py-4 items-center border rounded-lg hover:bg-accent/50 transition-colors"
+          >
+            <!-- Node Info -->
+            <div class="col-span-4 flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-lg"
+              >
+                🌐
+              </div>
+              <div class="min-w-0">
+                <div class="font-medium">{{ node.name }}</div>
+                <div class="text-sm text-muted-foreground truncate">{{ node.url }}</div>
+              </div>
+            </div>
 
-      <div v-else-if="currentChainNodes.length === 0" class="empty-state">
-        <p>No RPC nodes configured for this chain.</p>
-        <button class="btn-secondary" @click="openAddNodeModal(activeChain)">
-          Add your first node
-        </button>
-      </div>
+            <!-- Weight -->
+            <div class="col-span-2">
+              <div class="text-xl font-semibold">{{ node.weight }}%</div>
+            </div>
 
-      <div v-else class="nodes-list">
-        <div v-for="node in currentChainNodes" :key="node.id" class="node-row">
-          <div class="col-node">
-            <div class="node-icon">🌐</div>
-            <div class="node-info">
-              <div class="node-name">{{ node.name }}</div>
-              <div class="node-url">{{ node.url }}</div>
+            <!-- Connectivity -->
+            <div class="col-span-3">
+              <Badge :variant="node.is_connected ? 'default' : 'destructive'">
+                {{ node.is_connected ? 'CONNECTED' : 'DISCONNECTED' }}
+              </Badge>
+            </div>
+
+            <!-- Actions -->
+            <div class="col-span-3 flex items-center justify-end gap-2">
+              <Switch :checked="node.is_enabled" @update:checked="() => toggleNodeEnabled(node)" />
+              <Button variant="ghost" size="icon" @click="editNode(node)" title="Edit"> ✏️ </Button>
+              <Button variant="ghost" size="icon" @click="deleteNode(node)" title="Delete">
+                🗑️
+              </Button>
             </div>
           </div>
-
-          <div class="col-weight">
-            <div class="weight-display">{{ node.weight }}%</div>
-          </div>
-
-          <div class="col-connectivity">
-            <span :class="['connectivity-badge', node.is_connected ? 'connected' : 'disconnected']">
-              {{ node.is_connected ? 'CONNECTED' : 'DISCONNECTED' }}
-            </span>
-          </div>
-
-          <div class="col-actions">
-            <label class="toggle-switch">
-              <input type="checkbox" :checked="node.is_enabled" @change="toggleNodeEnabled(node)" />
-              <span class="toggle-slider"></span>
-            </label>
-            <button class="btn-icon" @click="editNode(node)" title="Edit">✏️</button>
-            <button class="btn-icon" @click="deleteNode(node)" title="Delete">🗑️</button>
-          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
 
-    <!-- 添加/编辑节点模态框 -->
-    <div
-      v-if="showAddNodeModal || showEditNodeModal"
-      class="modal-overlay"
-      @click.self="closeModals"
-    >
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>{{ showEditNodeModal ? 'Edit Node' : 'Add Node' }}</h3>
-          <button class="btn-close" @click="closeModals">×</button>
-        </div>
+    <!-- Add/Edit Node Dialog -->
+    <Dialog :open="showAddNodeModal || showEditNodeModal" @update:open="closeModals">
+      <DialogContent class="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{{ showEditNodeModal ? 'Edit Node' : 'Add Node' }}</DialogTitle>
+          <DialogDescription>
+            {{ showEditNodeModal ? 'Update' : 'Add' }} RPC node configuration
+          </DialogDescription>
+        </DialogHeader>
 
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Chain *</label>
-            <select v-model="nodeForm.chain_id" :disabled="showEditNodeModal">
-              <option value="">Select chain</option>
-              <option v-for="chain in supportedChains" :key="chain.id" :value="chain.id">
-                {{ chain.name }}
-              </option>
-            </select>
+        <div class="space-y-4 py-4">
+          <div class="space-y-2">
+            <Label for="chain">Chain *</Label>
+            <Select v-model="nodeForm.chain_id" :disabled="showEditNodeModal">
+              <SelectTrigger id="chain">
+                <SelectValue placeholder="Select chain" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="chain in supportedChains" :key="chain.id" :value="chain.id">
+                  {{ chain.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div class="form-group">
-            <label>Node Name *</label>
-            <input v-model="nodeForm.name" type="text" placeholder="e.g., 0xRPC, PublicNode" />
+          <div class="space-y-2">
+            <Label for="name">Node Name *</Label>
+            <Input id="name" v-model="nodeForm.name" placeholder="e.g., 0xRPC, PublicNode" />
           </div>
 
-          <div class="form-group">
-            <label>RPC URL *</label>
-            <input v-model="nodeForm.url" type="text" placeholder="https://..." />
+          <div class="space-y-2">
+            <Label for="url">RPC URL *</Label>
+            <Input id="url" v-model="nodeForm.url" type="url" placeholder="https://..." />
           </div>
 
-          <div class="form-group">
-            <label>Weight (0-100) *</label>
-            <input
+          <div class="space-y-2">
+            <Label for="weight">Weight (0-100) *</Label>
+            <Input
+              id="weight"
               v-model.number="nodeForm.weight"
               type="number"
               min="0"
               max="100"
               placeholder="100"
             />
-            <small>Higher weight means more requests will be routed to this node</small>
+            <p class="text-xs text-muted-foreground">
+              Higher weight means more requests will be routed to this node
+            </p>
           </div>
 
-          <div class="form-group">
-            <label>Priority</label>
-            <input v-model.number="nodeForm.priority" type="number" min="0" placeholder="0" />
-            <small>Higher priority nodes are preferred when weights are equal</small>
+          <div class="space-y-2">
+            <Label for="priority">Priority</Label>
+            <Input
+              id="priority"
+              v-model.number="nodeForm.priority"
+              type="number"
+              min="0"
+              placeholder="0"
+            />
+            <p class="text-xs text-muted-foreground">
+              Higher priority nodes are preferred when weights are equal
+            </p>
           </div>
 
-          <div class="form-group">
-            <label>Timeout (seconds)</label>
-            <input v-model.number="nodeForm.timeout" type="number" min="1" placeholder="30" />
+          <div class="space-y-2">
+            <Label for="timeout">Timeout (seconds)</Label>
+            <Input
+              id="timeout"
+              v-model.number="nodeForm.timeout"
+              type="number"
+              min="1"
+              placeholder="30"
+            />
           </div>
 
-          <div class="form-group checkbox-group">
-            <label>
-              <input type="checkbox" v-model="nodeForm.is_enabled" />
-              Enable this node
-            </label>
+          <div class="flex items-center space-x-2">
+            <Switch id="enabled" v-model:checked="nodeForm.is_enabled" />
+            <Label for="enabled" class="cursor-pointer">Enable this node</Label>
           </div>
 
-          <div v-if="nodeFormError" class="error-message">
-            {{ nodeFormError }}
-          </div>
+          <Alert v-if="nodeFormError" variant="destructive">
+            <AlertDescription>{{ nodeFormError }}</AlertDescription>
+          </Alert>
         </div>
 
-        <div class="modal-footer">
-          <button class="btn-secondary" @click="closeModals">Cancel</button>
-          <button class="btn-primary" @click="saveNode" :disabled="!isFormValid">
+        <DialogFooter>
+          <Button variant="outline" @click="closeModals">Cancel</Button>
+          <Button @click="saveNode" :disabled="!isFormValid">
             {{ showEditNodeModal ? 'Update' : 'Add' }} Node
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { rpcNodesAPI, chainsAPI } from '../api/client'
+import { rpcNodesAPI, chainsAPI } from '@/api/client'
+import type { Chain, RPCNode } from '@/types'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
-// 状态
+// State
 const loading = ref(true)
-const rpcNodesByChain = ref({})
-const supportedChains = ref([])
+const rpcNodesByChain = ref<Record<string, RPCNode[]>>({})
+const supportedChains = ref<Chain[]>([])
 const activeChain = ref('eth')
 const showAddNodeModal = ref(false)
 const showEditNodeModal = ref(false)
 const nodeFormError = ref('')
 
-// 节点表单
+// Node form
 const nodeForm = ref({
-  id: null,
+  id: null as number | null,
   chain_id: '',
   name: '',
   url: '',
@@ -178,7 +248,12 @@ const nodeForm = ref({
   is_enabled: true
 })
 
-// 计算属性
+// Computed
+const activeChainName = computed(() => {
+  const chain = supportedChains.value.find((c) => c.id === activeChain.value)
+  return chain?.name || activeChain.value
+})
+
 const currentChainNodes = computed(() => {
   return rpcNodesByChain.value[activeChain.value] || []
 })
@@ -193,12 +268,11 @@ const isFormValid = computed(() => {
   )
 })
 
-// 方法
+// Methods
 const loadChains = async () => {
   try {
     const response = await chainsAPI.list()
     supportedChains.value = response.data || []
-    // 如果可用，将默认活动链设置为第一条链
     if (supportedChains.value.length > 0 && !activeChain.value) {
       activeChain.value = supportedChains.value[0].id
     }
@@ -219,7 +293,7 @@ const loadRPCNodes = async () => {
   }
 }
 
-const resetForm = (preselectedChainId = null) => {
+const resetForm = (preselectedChainId: string | null = null) => {
   nodeForm.value = {
     id: null,
     chain_id: preselectedChainId || activeChain.value,
@@ -233,7 +307,7 @@ const resetForm = (preselectedChainId = null) => {
   nodeFormError.value = ''
 }
 
-const openAddNodeModal = (chainId = null) => {
+const openAddNodeModal = (chainId: string | null = null) => {
   resetForm(chainId)
   showAddNodeModal.value = true
 }
@@ -244,16 +318,16 @@ const closeModals = () => {
   resetForm()
 }
 
-const editNode = (node) => {
+const editNode = (node: RPCNode) => {
   nodeForm.value = {
     id: node.id,
     chain_id: node.chain_id,
     name: node.name,
     url: node.url,
-    weight: node.weight,
-    priority: node.priority,
-    timeout: node.timeout,
-    is_enabled: node.is_enabled
+    weight: node.weight || 100,
+    priority: node.priority || 0,
+    timeout: 30,
+    is_enabled: node.is_active
   }
   showEditNodeModal.value = true
 }
@@ -262,23 +336,21 @@ const saveNode = async () => {
   nodeFormError.value = ''
 
   try {
-    if (showEditNodeModal.value) {
-      // 更新现有节点
+    if (showEditNodeModal.value && nodeForm.value.id) {
       await rpcNodesAPI.update(nodeForm.value.id, nodeForm.value)
     } else {
-      // 创建新节点
       await rpcNodesAPI.create(nodeForm.value)
     }
 
     await loadRPCNodes()
     closeModals()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to save node:', error)
     nodeFormError.value = error.response?.data?.error || 'Failed to save node'
   }
 }
 
-const deleteNode = async (node) => {
+const deleteNode = async (node: RPCNode) => {
   if (!confirm(`Are you sure you want to delete "${node.name}"?`)) {
     return
   }
@@ -292,11 +364,11 @@ const deleteNode = async (node) => {
   }
 }
 
-const toggleNodeEnabled = async (node) => {
+const toggleNodeEnabled = async (node: RPCNode) => {
   try {
     await rpcNodesAPI.update(node.id, {
       ...node,
-      is_enabled: !node.is_enabled
+      is_active: !node.is_active
     })
     await loadRPCNodes()
   } catch (error) {
@@ -305,426 +377,9 @@ const toggleNodeEnabled = async (node) => {
   }
 }
 
-// 生命周期
+// Lifecycle
 onMounted(async () => {
   await loadChains()
   await loadRPCNodes()
 })
 </script>
-
-<style scoped>
-.rpc-nodes-settings {
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.settings-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.settings-header h2 {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 4px 0;
-  color: #1a1a1a;
-}
-
-.subtitle {
-  color: #666;
-  margin: 0;
-  font-size: 14px;
-}
-
-.btn-add-node {
-  background: #5865f2;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-add-node:hover {
-  background: #4752c4;
-}
-
-/* 链标签页 */
-.chain-tabs-container {
-  margin-bottom: 24px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.chain-tabs {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-
-.chain-tab {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-size: 14px;
-  color: #666;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.chain-tab:hover {
-  color: #1a1a1a;
-}
-
-.chain-tab.active {
-  color: #5865f2;
-  border-bottom-color: #5865f2;
-  font-weight: 500;
-}
-
-.chain-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-}
-
-/* 节点表格 */
-.nodes-table-container {
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  overflow: hidden;
-}
-
-.nodes-table-header {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 140px;
-  gap: 16px;
-  padding: 16px 20px;
-  background: #f8f8f8;
-  font-size: 13px;
-  font-weight: 600;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.nodes-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.node-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 140px;
-  gap: 16px;
-  padding: 20px;
-  border-top: 1px solid #e0e0e0;
-  align-items: center;
-}
-
-.node-row:first-child {
-  border-top: none;
-}
-
-.col-node {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.node-icon {
-  font-size: 24px;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f0f0;
-  border-radius: 8px;
-}
-
-.node-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.node-name {
-  font-weight: 500;
-  color: #1a1a1a;
-  margin-bottom: 4px;
-}
-
-.node-url {
-  font-size: 13px;
-  color: #666;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.weight-display {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-.connectivity-badge {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.connectivity-badge.connected {
-  background: #d4f4dd;
-  color: #1e7e34;
-}
-
-.connectivity-badge.disconnected {
-  background: #ffe0e0;
-  color: #c00;
-}
-
-.col-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-/* Toggle Switch */
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-  cursor: pointer;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  border-radius: 24px;
-  transition: 0.3s;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: '';
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  border-radius: 50%;
-  transition: 0.3s;
-}
-
-input:checked + .toggle-slider {
-  background-color: #5865f2;
-}
-
-input:checked + .toggle-slider:before {
-  transform: translateX(20px);
-}
-
-.btn-icon {
-  background: none;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 6px;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-}
-
-.btn-icon:hover {
-  opacity: 1;
-}
-
-/* 空状态/加载状态 */
-.loading-state,
-.empty-state {
-  padding: 60px 20px;
-  text-align: center;
-  color: #666;
-}
-
-.empty-state p {
-  margin-bottom: 16px;
-}
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.btn-close {
-  background: none;
-  border: none;
-  font-size: 28px;
-  line-height: 1;
-  cursor: pointer;
-  color: #666;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-}
-
-.modal-body {
-  padding: 24px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 500;
-  font-size: 14px;
-  color: #1a1a1a;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d0d0d0;
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #5865f2;
-}
-
-.form-group small {
-  display: block;
-  margin-top: 4px;
-  font-size: 12px;
-  color: #666;
-}
-
-.checkbox-group label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-weight: normal;
-}
-
-.checkbox-group input[type='checkbox'] {
-  width: auto;
-  cursor: pointer;
-}
-
-.error-message {
-  padding: 12px;
-  background: #ffe0e0;
-  color: #c00;
-  border-radius: 6px;
-  font-size: 14px;
-  margin-top: 16px;
-}
-
-.modal-footer {
-  padding: 16px 24px;
-  border-top: 1px solid #e0e0e0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.btn-primary,
-.btn-secondary {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: #5865f2;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #4752c4;
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: #f0f0f0;
-  color: #1a1a1a;
-}
-
-.btn-secondary:hover {
-  background: #e0e0e0;
-}
-</style>

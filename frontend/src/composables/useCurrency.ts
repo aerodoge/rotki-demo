@@ -1,15 +1,26 @@
-import { ref, computed } from 'vue'
+import { ref, type Ref } from 'vue'
+import type { Address } from '@/types'
 
-const currencies = ['USD', 'ETH', 'BTC']
-const currencySymbols = {
+type Currency = 'USD' | 'ETH' | 'BTC'
+
+interface CurrencySymbols {
+  [key: string]: string
+}
+
+interface ExchangeRates {
+  [key: string]: number
+}
+
+const currencies: Currency[] = ['USD', 'ETH', 'BTC']
+const currencySymbols: CurrencySymbols = {
   USD: '$',
   ETH: 'Ξ',
   BTC: '₿'
 }
 
 // 共享状态
-const selectedCurrency = ref('USD')
-const exchangeRates = ref({
+const selectedCurrency: Ref<Currency> = ref('USD')
+const exchangeRates: Ref<ExchangeRates> = ref({
   USD: 1,
   ETH: 0,
   BTC: 0
@@ -17,9 +28,9 @@ const exchangeRates = ref({
 
 export function useCurrency() {
   // 从代币价格更新汇率
-  const updateExchangeRates = (addresses) => {
-    let ethPrice = null
-    let btcPrice = null
+  const updateExchangeRates = (addresses: Address[]): void => {
+    let ethPrice: number | null = null
+    let btcPrice: number | null = null
 
     addresses.forEach((addr) => {
       if (addr.tokens && addr.tokens.length > 0) {
@@ -64,47 +75,50 @@ export function useCurrency() {
     console.log('Exchange rates updated:', exchangeRates.value)
   }
 
-  // 根据选定的货币格式化价值
-  const formatValue = (value) => {
+  // 根据选定的货币格式化价值（带千位分隔符）
+  const formatValue = (value: number): string => {
     const rate = exchangeRates.value[selectedCurrency.value]
     if (rate === 0 || !rate) {
-      return value.toFixed(2)
+      return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     }
     const convertedValue = value / rate
-    return convertedValue.toFixed(selectedCurrency.value === 'USD' ? 2 : 6)
+    const decimals = selectedCurrency.value === 'USD' ? 2 : 6
+    return convertedValue.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
   }
 
-  // 根据选定的货币格式化代币价格
-  const formatTokenPrice = (usdPrice) => {
+  // 根据选定的货币格式化代币价格（带千位分隔符）
+  const formatTokenPrice = (usdPrice: number): string => {
     const rate = exchangeRates.value[selectedCurrency.value]
     if (rate === 0 || !rate) {
-      return usdPrice.toFixed(2)
+      return usdPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     }
     const convertedPrice = usdPrice / rate
-    return convertedPrice.toFixed(selectedCurrency.value === 'USD' ? 2 : 6)
+    const decimals = selectedCurrency.value === 'USD' ? 2 : 6
+    return convertedPrice.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
   }
 
-  // 根据选定的货币格式化代币价值
-  const formatTokenValue = (usdValue) => {
+  // 根据选定的货币格式化代币价值（带千位分隔符）
+  const formatTokenValue = (usdValue: number): string => {
     const rate = exchangeRates.value[selectedCurrency.value]
     if (rate === 0 || !rate) {
-      return usdValue.toFixed(2)
+      return usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     }
     const convertedValue = usdValue / rate
-    return convertedValue.toFixed(selectedCurrency.value === 'USD' ? 2 : 6)
+    const decimals = selectedCurrency.value === 'USD' ? 2 : 6
+    return convertedValue.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
   }
 
   // 货币选择函数
-  const selectCurrency = (currency) => {
+  const selectCurrency = (currency: Currency): void => {
     selectedCurrency.value = currency
     localStorage.setItem('selectedCurrency', currency)
   }
 
   // 恢复保存的货币偏好设置
-  const restoreSavedCurrency = () => {
+  const restoreSavedCurrency = (): void => {
     const savedCurrency = localStorage.getItem('selectedCurrency')
-    if (savedCurrency && currencies.includes(savedCurrency)) {
-      selectedCurrency.value = savedCurrency
+    if (savedCurrency && currencies.includes(savedCurrency as Currency)) {
+      selectedCurrency.value = savedCurrency as Currency
     }
   }
 

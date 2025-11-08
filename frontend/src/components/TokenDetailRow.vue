@@ -1,47 +1,65 @@
 <template>
-  <tr class="token-detail-row">
-    <td colspan="6">
-      <div class="token-detail">
-        <div class="token-icon-wrapper">
-          <div class="token-main-icon">
+  <tr class="bg-muted/5 border-b hover:bg-muted/10 transition-colors">
+    <td colspan="6" class="p-0">
+      <div class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 px-4 py-3 items-center">
+        <!-- Token Icon with Chain Badge -->
+        <div class="relative w-10 h-10">
+          <div
+            class="w-10 h-10 rounded-full overflow-hidden bg-background border flex items-center justify-center"
+          >
             <img
               v-if="token.logo_url && token.logo_url.length > 0 && !failedImage"
               :src="token.logo_url"
               :alt="token.symbol"
-              class="token-logo"
+              class="w-full h-full object-cover"
               @error="handleImageError"
             />
-            <span v-else class="token-symbol-text">
+            <span v-else class="text-sm font-bold text-primary uppercase">
               {{ token.symbol.substring(0, 2) }}
             </span>
           </div>
-          <div class="token-chain-badge" :title="token.chain?.name || token.chain_id">
+          <div
+            class="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden"
+            :title="token.chain?.name || token.chain_id"
+          >
             <img
               v-if="token.chain?.logo_url"
               :src="token.chain.logo_url"
               :alt="token.chain_id"
-              class="chain-logo-small"
+              class="w-full h-full object-cover"
             />
-            <span v-else class="chain-text-small">{{ getChainIcon(token.chain_id) }}</span>
+            <span v-else class="text-[8px]">{{ getChainIcon(token.chain_id) }}</span>
           </div>
         </div>
-        <div class="token-info-detail">
-          <div class="token-symbol-main">{{ token.symbol }}</div>
-          <div class="token-name-sub">{{ token.name }}</div>
+
+        <!-- Token Info -->
+        <div class="flex flex-col gap-0.5">
+          <div class="text-sm font-semibold">{{ token.symbol }}</div>
+          <div class="text-xs text-muted-foreground">{{ token.name }}</div>
         </div>
-        <div class="token-location">
-          <span class="location-label">{{ token.chain?.name || token.chain_id }}</span>
+
+        <!-- Location -->
+        <div class="flex items-center">
+          <Badge variant="secondary" class="text-xs">
+            {{ token.chain?.name || token.chain_id }}
+          </Badge>
         </div>
-        <div class="token-price">
-          <div class="price-amount">
+
+        <!-- Price -->
+        <div class="text-right">
+          <div class="text-sm font-medium">
             {{ currencySymbols[selectedCurrency] }}{{ formatTokenPrice(token.price) }}
           </div>
         </div>
-        <div class="token-balance">
-          <div class="balance-amount">{{ parseFloat(token.balance).toFixed(4) }}</div>
+
+        <!-- Balance -->
+        <div class="text-right">
+          <div class="text-sm font-medium">{{ parseFloat(token.balance).toFixed(4) }}</div>
         </div>
-        <div class="token-value">
-          <div class="value-amount">
+
+        <!-- Value -->
+        <div class="text-right">
+          <div class="text-sm font-medium">
             {{ currencySymbols[selectedCurrency] }}{{ formatTokenValue(token.usd_value) }}
           </div>
         </div>
@@ -50,16 +68,17 @@
   </tr>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useCurrency } from '../composables/useCurrency'
+import { Badge } from '@/components/ui/badge'
+import type { Token } from '@/types'
 
-const props = defineProps({
-  token: {
-    type: Object,
-    required: true
-  }
-})
+interface Props {
+  token: Token
+}
+
+const props = defineProps<Props>()
 
 const { currencySymbols, selectedCurrency, formatTokenPrice, formatTokenValue } = useCurrency()
 const failedImage = ref(false)
@@ -68,8 +87,8 @@ const handleImageError = () => {
   failedImage.value = true
 }
 
-const getChainIcon = (chainId) => {
-  const icons = {
+const getChainIcon = (chainId: string) => {
+  const icons: Record<string, string> = {
     eth: '⟠',
     bsc: 'B',
     polygon: 'P',
@@ -79,119 +98,3 @@ const getChainIcon = (chainId) => {
   return icons[chainId] || '⛓️'
 }
 </script>
-
-<style scoped>
-.token-detail-row {
-  background: #fafafa;
-}
-
-.token-detail {
-  display: grid;
-  grid-template-columns: 50px 1fr 150px 150px 150px 150px;
-  gap: 16px;
-  padding: 12px 16px;
-  align-items: center;
-}
-
-.token-icon-wrapper {
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
-
-.token-main-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: white;
-  border: 1px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.token-logo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.token-symbol-text {
-  font-size: 14px;
-  font-weight: 700;
-  color: #4f46e5;
-  text-transform: uppercase;
-}
-
-.token-chain-badge {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: white;
-  border: 2px solid white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.chain-logo-small {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.chain-text-small {
-  font-size: 8px;
-}
-
-.token-info-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.token-symbol-main {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.token-name-sub {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.token-location {
-  display: flex;
-  align-items: center;
-}
-
-.location-label {
-  padding: 4px 12px;
-  background: #f3f4f6;
-  border-radius: 12px;
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.token-price,
-.token-balance,
-.token-value {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.price-amount,
-.balance-amount,
-.value-amount {
-  font-size: 13px;
-  color: #1f2937;
-  font-weight: 500;
-}
-</style>

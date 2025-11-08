@@ -1,132 +1,354 @@
 <template>
-  <div class="evm-accounts">
-    <div class="header">
-      <h1>EVM accounts</h1>
-      <div class="header-actions">
+  <div class="container mx-auto p-6 space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <h1 class="text-3xl font-bold tracking-tight">EVM Accounts</h1>
+      <div class="flex items-center gap-3">
         <CurrencySelector />
       </div>
     </div>
 
-    <div class="actions-bar">
-      <div class="actions-left">
-        <button class="btn-secondary" @click="showAddWalletModal = true">Add Wallet</button>
-        <button class="btn-secondary" @click="showAddAddressModal = true">Add Address</button>
-      </div>
+    <!-- Action Buttons -->
+    <div class="flex gap-3">
+      <Button
+        @click="showAddWalletModal = true"
+        class="bg-gradient-primary hover:bg-gradient-primary-hover shadow-lg shadow-primary/25"
+      >
+        <span class="mr-2">+</span>
+        Add Wallet
+      </Button>
+      <Button
+        @click="showAddAddressModal = true"
+        variant="outline"
+        class="border-primary/20 hover:bg-gradient-accent hover:border-primary/40"
+      >
+        <span class="mr-2">+</span>
+        Add Address
+      </Button>
     </div>
 
-    <div class="content">
-      <div class="table-container">
-        <table class="accounts-table">
-          <thead>
-            <tr>
-              <th>Account</th>
-              <th>Chains</th>
-              <th>Tags</th>
-              <th>Assets</th>
-              <th>{{ selectedCurrency }} value</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="wallet in wallets" :key="wallet.id">
-              <tr class="wallet-row" @click="toggleWallet(wallet.id)">
-                <td>
-                  <div class="account-cell">
-                    <span class="expand-icon">{{ expandedWallets[wallet.id] ? '▼' : '▶' }}</span>
-                    <div class="account-avatar">{{ wallet.name[0].toUpperCase() }}</div>
-                    <span class="account-name">{{ wallet.name }}</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="chains">
-                    <span class="chain-badge">{{ getWalletChainCount(wallet.id) }}</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="tags">
-                    <span v-for="tag in wallet.tags || []" :key="tag" class="tag">{{ tag }}</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="assets">
-                    <div class="asset-icons">
-                      <span class="asset-icon">ETH</span>
-                      <span class="asset-count">{{ getWalletAssetCount(wallet.id) }}+</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="eth-value">
-                    {{ currencySymbols[selectedCurrency]
-                    }}{{ formatValue(getTotalValueByWallet(wallet.id)) }}
-                  </div>
-                </td>
-                <td>
-                  <div class="actions">
-                    <button class="icon-btn" @click.stop="refreshWallet(wallet.id)" title="Refresh">
-                      🔄
-                    </button>
-                    <button class="icon-btn" @click.stop="editWallet(wallet)" title="Edit">
-                      ✏️
-                    </button>
-                    <button class="icon-btn" @click.stop="deleteWallet(wallet.id)" title="Delete">
-                      🗑️
-                    </button>
-                  </div>
-                </td>
+    <!-- Accounts Card -->
+    <Card>
+      <CardContent class="p-0">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="border-b bg-muted/50">
+              <tr>
+                <th
+                  class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                >
+                  Account
+                </th>
+                <th
+                  class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                >
+                  Chains
+                </th>
+                <th
+                  class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                >
+                  Tags
+                </th>
+                <th
+                  class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                >
+                  Assets
+                </th>
+                <th
+                  class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                >
+                  {{ selectedCurrency }} value
+                </th>
+                <th
+                  class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                >
+                  Actions
+                </th>
               </tr>
-
-              <template v-if="expandedWallets[wallet.id]">
-                <!-- 地址列表标题 -->
-                <tr v-if="getAddressesByWallet(wallet.id).length > 0" class="address-header-row">
-                  <th class="address-header-cell">Account</th>
-                  <th class="address-header-cell">Chains</th>
-                  <th class="address-header-cell">Tags</th>
-                  <th class="address-header-cell">Assets</th>
-                  <th class="address-header-cell">{{ selectedCurrency }} value</th>
-                  <th class="address-header-cell">Actions</th>
-                </tr>
-                <template v-for="address in getAddressesByWallet(wallet.id)" :key="address.id">
-                  <tr class="address-row" @click="toggleAddress(address.id)">
-                    <td>
-                      <div class="account-cell address-cell">
-                        <span class="expand-icon">{{
-                          expandedAddresses[address.id] ? '▼' : '▶'
-                        }}</span>
-                        <div class="account-avatar small">
-                          {{ address.label?.[0]?.toUpperCase() || 'A' }}
-                        </div>
-                        <div class="address-info">
-                          <div class="address-label">{{ address.label || 'Unlabeled' }}</div>
-                          <div class="address-hash">{{ formatAddress(address.address) }}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="chains">
-                        <span
-                          class="chain-icon"
-                          v-for="chain in getAddressChains(address)"
-                          :key="chain"
+            </thead>
+            <tbody>
+              <template v-for="wallet in wallets" :key="wallet.id">
+                <!-- Wallet Row -->
+                <tr
+                  class="border-b hover:bg-accent/50 cursor-pointer transition-all group"
+                  @click="toggleWallet(wallet.id)"
+                >
+                  <td class="px-4 py-4">
+                    <div class="flex items-center gap-3">
+                      <span
+                        class="text-xs text-muted-foreground transform transition-transform group-hover:scale-110"
+                        :class="{ 'rotate-90': expandedWallets[wallet.id] }"
+                      >
+                        ▶
+                      </span>
+                      <img
+                        :src="getWalletAvatar(wallet.name, wallet.id)"
+                        :alt="wallet.name"
+                        class="w-8 h-8 rounded-lg shadow-sm group-hover:shadow-md transition-all"
+                      />
+                      <span class="font-semibold group-hover:text-primary transition-colors">{{
+                        wallet.name
+                      }}</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-4">
+                    <div class="flex items-center gap-1">
+                      <template
+                        v-for="(chainId, index) in getWalletUniqueChains(wallet.id).slice(0, 3)"
+                        :key="chainId"
+                      >
+                        <img
+                          v-if="getChainLogo(chainId) && !failedChainImages[chainId]"
+                          :src="getChainLogo(chainId)"
+                          :alt="chainId"
+                          :title="getChainName(chainId)"
+                          class="w-6 h-6 rounded-full object-cover border border-border"
+                          @error="
+                            () => {
+                              console.log(
+                                'Image load failed for chain:',
+                                chainId,
+                                getChainLogo(chainId)
+                              )
+                              failedChainImages[chainId] = true
+                            }
+                          "
+                        />
+                        <div
+                          v-else
+                          class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-[10px] font-semibold border border-purple-400"
+                          :title="getChainName(chainId)"
                         >
-                          {{ getChainIcon(chain) }}
-                        </span>
+                          {{ getChainName(chainId).charAt(0).toUpperCase() }}
+                        </div>
+                      </template>
+                      <div
+                        v-if="getWalletChainCount(wallet.id) > 3"
+                        class="w-6 h-6 rounded-full bg-muted hover:bg-accent flex items-center justify-center text-[10px] font-semibold text-muted-foreground border border-border cursor-pointer transition-colors"
+                        :title="`${getWalletChainCount(wallet.id) - 3} more chains`"
+                      >
+                        +{{ getWalletChainCount(wallet.id) - 3 }}
                       </div>
-                    </td>
-                    <td>
-                      <div class="tags">
-                        <span v-for="tag in address.tags || []" :key="tag" class="tag-small">{{
-                          tag
-                        }}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="assets">
-                        <div class="asset-icons">
+                    </div>
+                  </td>
+                  <td class="px-4 py-4">
+                    <div class="flex gap-2 flex-wrap">
+                      <Badge
+                        v-for="tag in wallet.tags || []"
+                        :key="tag"
+                        variant="outline"
+                        class="border-primary/30 text-primary/80"
+                      >
+                        {{ tag }}
+                      </Badge>
+                    </div>
+                  </td>
+                  <td class="px-4 py-4">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm text-muted-foreground"
+                        >{{ getWalletAssetCount(wallet.id) }} assets</span
+                      >
+                    </div>
+                  </td>
+                  <td class="px-4 py-4">
+                    <div class="font-mono font-semibold text-primary">
+                      {{ currencySymbols[selectedCurrency]
+                      }}{{ formatValue(getTotalValueByWallet(wallet.id)) }}
+                    </div>
+                  </td>
+                  <td class="px-4 py-4">
+                    <div class="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-8 w-8"
+                        @click.stop="refreshWallet(wallet.id)"
+                        title="Refresh"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <polyline points="23 4 23 10 17 10" />
+                          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                        </svg>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-8 w-8"
+                        @click.stop="editWallet(wallet)"
+                        title="Edit"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-8 w-8 hover:text-destructive"
+                        @click.stop="deleteWallet(wallet.id)"
+                        title="Delete"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <polyline points="3 6 5 6 21 6" />
+                          <path
+                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                          />
+                        </svg>
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Expanded Wallet: Addresses -->
+                <template v-if="expandedWallets[wallet.id]">
+                  <!-- Address Header -->
+                  <tr
+                    v-if="getAddressesByWallet(wallet.id).length > 0"
+                    class="bg-muted/30 border-b"
+                  >
+                    <th
+                      class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                    >
+                      Account
+                    </th>
+                    <th
+                      class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                    >
+                      Chains
+                    </th>
+                    <th
+                      class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                    >
+                      Tags
+                    </th>
+                    <th
+                      class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                    >
+                      Assets
+                    </th>
+                    <th
+                      class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                    >
+                      {{ selectedCurrency }} value
+                    </th>
+                    <th
+                      class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+
+                  <!-- Address Rows -->
+                  <template v-for="address in getAddressesByWallet(wallet.id)" :key="address.id">
+                    <tr
+                      class="bg-muted/30 border-b hover:bg-muted/50 cursor-pointer transition-all group"
+                      @click="toggleAddress(address.id)"
+                    >
+                      <td class="px-4 py-3 pl-12">
+                        <div class="flex items-center gap-3">
+                          <span
+                            class="text-xs text-muted-foreground transform transition-transform group-hover:scale-110"
+                            :class="{ 'rotate-90': expandedAddresses[address.id] }"
+                          >
+                            ▶
+                          </span>
+                          <Avatar
+                            class="h-7 w-7 ring-1 ring-primary/20 group-hover:ring-primary/40 transition-all"
+                          >
+                            <AvatarFallback
+                              class="text-xs bg-primary/20 text-primary font-semibold"
+                            >
+                              {{ address.label?.[0]?.toUpperCase() || 'A' }}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div class="flex flex-col">
+                            <span
+                              class="text-sm font-medium group-hover:text-primary transition-colors"
+                              >{{ address.label || 'Unlabeled' }}</span
+                            >
+                            <span class="text-xs text-muted-foreground font-mono">{{
+                              formatAddress(address.address)
+                            }}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="flex items-center gap-1">
+                          <template
+                            v-for="chainId in getAddressChains(address).slice(0, 3)"
+                            :key="chainId"
+                          >
+                            <img
+                              v-if="getChainLogo(chainId) && !failedChainImages[chainId]"
+                              :src="getChainLogo(chainId)"
+                              :alt="chainId"
+                              :title="getChainName(chainId)"
+                              class="w-5 h-5 rounded-full object-cover border border-border"
+                              @error="failedChainImages[chainId] = true"
+                            />
+                            <div
+                              v-else
+                              class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-[8px] font-semibold border border-purple-400"
+                              :title="getChainName(chainId)"
+                            >
+                              {{ getChainName(chainId).charAt(0).toUpperCase() }}
+                            </div>
+                          </template>
+                          <div
+                            v-if="getAddressChains(address).length > 3"
+                            class="w-5 h-5 rounded-full bg-muted hover:bg-accent flex items-center justify-center text-[9px] font-semibold text-muted-foreground border border-border cursor-pointer transition-colors"
+                            :title="`${getAddressChains(address).length - 3} more chains`"
+                          >
+                            +{{ getAddressChains(address).length - 3 }}
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="flex gap-1 flex-wrap">
+                          <Badge
+                            v-for="tag in address.tags || []"
+                            :key="tag"
+                            variant="secondary"
+                            class="text-xs bg-primary/5 text-primary/70 border-primary/20"
+                          >
+                            {{ tag }}
+                          </Badge>
+                        </div>
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="flex items-center gap-1">
                           <div
                             v-for="token in (address.tokens || []).slice(0, 3)"
                             :key="token.id"
-                            class="token-logo-wrapper"
+                            class="w-6 h-6"
                           >
                             <img
                               v-if="
@@ -137,203 +359,294 @@
                               :src="token.logo_url"
                               :alt="token.symbol"
                               :title="token.symbol"
-                              class="asset-token-logo"
+                              class="w-6 h-6 rounded-full border object-cover"
                               @error="handleImageError($event, token.id)"
                             />
-                            <div v-else class="asset-token-fallback" :title="token.symbol">
+                            <div
+                              v-else
+                              class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
+                              :title="token.symbol"
+                            >
                               {{ token.symbol.substring(0, 2) }}
                             </div>
                           </div>
-                          <span v-if="(address.tokens || []).length > 3" class="asset-count">
+                          <span
+                            v-if="(address.tokens || []).length > 3"
+                            class="text-xs text-muted-foreground ml-1"
+                          >
                             +{{ (address.tokens || []).length - 3 }}
                           </span>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="eth-value">
-                        {{ currencySymbols[selectedCurrency]
-                        }}{{ formatValue(getAddressValue(address)) }}
-                      </div>
-                    </td>
-                    <td>
-                      <div class="actions">
-                        <button
-                          class="icon-btn"
-                          @click.stop="refreshAddress(address.id)"
-                          title="Refresh"
-                        >
-                          🔄
-                        </button>
-                        <button class="icon-btn" @click.stop="editAddress(address)" title="Edit">
-                          ✏️
-                        </button>
-                        <button
-                          class="icon-btn"
-                          @click.stop="deleteAddress(address.id)"
-                          title="Delete"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-
-                  <!-- 展开的地址代币详情 -->
-                  <template v-if="expandedAddresses[address.id]">
-                    <tr v-if="!address.tokens || address.tokens.length === 0" class="no-tokens-row">
-                      <td colspan="6">
-                        <div class="no-tokens-message">
-                          No tokens found for this address. Click the refresh button to sync data.
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="font-mono text-sm">
+                          {{ currencySymbols[selectedCurrency]
+                          }}{{ formatValue(getAddressValue(address)) }}
                         </div>
                       </td>
-                    </tr>
-                    <!-- 地址代币的视图标签页 -->
-                    <tr v-if="address.tokens && address.tokens.length > 0" class="tabs-row">
-                      <td colspan="6">
-                        <div class="view-tabs">
-                          <button
-                            :class="[
-                              'tab-button',
-                              { active: addressViewMode[address.id] === 'aggregated' }
-                            ]"
-                            @click="setAddressViewMode(address.id, 'aggregated')"
+                      <td class="px-4 py-3">
+                        <div class="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            class="h-8 w-8"
+                            @click.stop="refreshAddress(address.id)"
+                            title="Refresh"
                           >
-                            Aggregated assets
-                          </button>
-                          <button
-                            :class="[
-                              'tab-button',
-                              { active: addressViewMode[address.id] === 'perChain' }
-                            ]"
-                            @click="setAddressViewMode(address.id, 'perChain')"
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              class="h-4 w-4"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            >
+                              <polyline points="23 4 23 10 17 10" />
+                              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                            </svg>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            class="h-8 w-8"
+                            @click.stop="editAddress(address)"
+                            title="Edit"
                           >
-                            Per chain
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-
-                    <!-- 聚合视图：显示所有代币 -->
-                    <template v-if="addressViewMode[address.id] === 'aggregated'">
-                      <!-- 代币详情标题 -->
-                      <tr
-                        v-if="address.tokens && address.tokens.length > 0"
-                        class="token-header-row"
-                      >
-                        <td colspan="6">
-                          <div class="token-detail token-header">
-                            <div class="token-icon-wrapper">Asset</div>
-                            <div class="token-info-detail"></div>
-                            <div class="token-location">Location</div>
-                            <div class="token-price">Price in {{ selectedCurrency }}</div>
-                            <div class="token-balance">Amount</div>
-                            <div class="token-value">{{ selectedCurrency }} Value</div>
-                          </div>
-                        </td>
-                      </tr>
-                      <TokenDetailRow
-                        v-for="token in getPaginatedTokens(address.id)"
-                        :key="token.id"
-                        :token="token"
-                      />
-                      <!-- 分页控制 -->
-                      <tr v-if="address.tokens && address.tokens.length > 0" class="pagination-row">
-                        <td colspan="6">
-                          <div class="pagination-controls">
-                            <div class="pagination-info">
-                              <span class="pagination-label">Rows per page:</span>
-                              <select
-                                v-model="tokenPagination[address.id].pageSize"
-                                @change="onPageSizeChange(address.id)"
-                                class="page-size-select"
-                              >
-                                <option :value="10">10</option>
-                                <option :value="20">20</option>
-                                <option :value="50">50</option>
-                                <option :value="100">100</option>
-                              </select>
-                              <span class="pagination-range">
-                                Items #
-                                {{ getStartIndex(address.id) }}-{{ getEndIndex(address.id) }} of
-                                {{ address.tokens.length }}
-                              </span>
-                              <span class="pagination-page">
-                                Page {{ tokenPagination[address.id]?.currentPage || 1 }} of
-                                {{ getTotalPages(address.id) }}
-                              </span>
-                            </div>
-                            <div class="pagination-buttons">
-                              <button
-                                @click="goToFirstPage(address.id)"
-                                :disabled="isFirstPage(address.id)"
-                                class="pagination-btn"
-                                title="First page"
-                              >
-                                ⟨⟨
-                              </button>
-                              <button
-                                @click="goToPreviousPage(address.id)"
-                                :disabled="isFirstPage(address.id)"
-                                class="pagination-btn"
-                                title="Previous page"
-                              >
-                                ⟨
-                              </button>
-                              <button
-                                @click="goToNextPage(address.id)"
-                                :disabled="isLastPage(address.id)"
-                                class="pagination-btn"
-                                title="Next page"
-                              >
-                                ⟩
-                              </button>
-                              <button
-                                @click="goToLastPage(address.id)"
-                                :disabled="isLastPage(address.id)"
-                                class="pagination-btn"
-                                title="Last page"
-                              >
-                                ⟩⟩
-                              </button>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    </template>
-
-                    <!-- 按链视图：显示按链分组的代币 -->
-                    <template v-if="addressViewMode[address.id] === 'perChain'">
-                      <template
-                        v-for="chain in getAddressChainGroups(address.id)"
-                        :key="chain.chainId"
-                      >
-                        <tr
-                          class="chain-group-row"
-                          @click="toggleAddressChain(address.id, chain.chainId)"
-                        >
-                          <td colspan="6">
-                            <div class="chain-group-header">
-                              <span class="expand-icon">{{
-                                expandedAddressChains[`${address.id}_${chain.chainId}`] ? '▼' : '▶'
-                              }}</span>
-                              <img
-                                v-if="chain.logoUrl && !failedChainImages[chain.chainId]"
-                                :src="chain.logoUrl"
-                                :alt="chain.name"
-                                class="chain-logo-small"
-                                @error="failedChainImages[chain.chainId] = true"
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              class="h-4 w-4"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            >
+                              <path
+                                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
                               />
-                              <div v-else class="chain-logo-placeholder-tiny">
-                                {{ (chain.name || chain.chainId || '?').charAt(0).toUpperCase() }}
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            class="h-8 w-8 hover:text-destructive"
+                            @click.stop="deleteAddress(address.id)"
+                            title="Delete"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              class="h-4 w-4"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            >
+                              <polyline points="3 6 5 6 21 6" />
+                              <path
+                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                              />
+                            </svg>
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <!-- Expanded Address: Tokens -->
+                    <template v-if="expandedAddresses[address.id]">
+                      <!-- No tokens message -->
+                      <tr v-if="!address.tokens || address.tokens.length === 0" class="bg-muted/10">
+                        <td colspan="6" class="px-4 py-8">
+                          <div class="text-center text-sm text-muted-foreground italic">
+                            No tokens found for this address. Click the refresh button to sync data.
+                          </div>
+                        </td>
+                      </tr>
+
+                      <!-- View Mode Tabs -->
+                      <tr v-if="address.tokens && address.tokens.length > 0" class="bg-muted/10">
+                        <td colspan="6" class="p-0">
+                          <Tabs
+                            :model-value="addressViewMode[address.id] || 'aggregated'"
+                            @update:model-value="(val) => setAddressViewMode(address.id, val)"
+                            class="w-full"
+                          >
+                            <TabsList
+                              class="w-full rounded-none border-b bg-transparent p-0 h-auto"
+                            >
+                              <TabsTrigger
+                                value="aggregated"
+                                class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+                              >
+                                Aggregated assets
+                              </TabsTrigger>
+                              <TabsTrigger
+                                value="perChain"
+                                class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+                              >
+                                Per chain
+                              </TabsTrigger>
+                            </TabsList>
+                          </Tabs>
+                        </td>
+                      </tr>
+
+                      <!-- Aggregated View -->
+                      <template v-if="addressViewMode[address.id] === 'aggregated'">
+                        <!-- Token Header -->
+                        <tr
+                          v-if="address.tokens && address.tokens.length > 0"
+                          class="bg-muted/30 border-b"
+                        >
+                          <td colspan="6" class="p-0">
+                            <div
+                              class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 px-4 py-3 text-xs font-medium text-muted-foreground uppercase"
+                            >
+                              <div>Asset</div>
+                              <div></div>
+                              <div>Location</div>
+                              <div class="text-right">Price in {{ selectedCurrency }}</div>
+                              <div class="text-right">Amount</div>
+                              <div class="text-right">{{ selectedCurrency }} Value</div>
+                            </div>
+                          </td>
+                        </tr>
+                        <TokenDetailRow
+                          v-for="token in getPaginatedTokens(address.id)"
+                          :key="token.id"
+                          :token="token"
+                        />
+
+                        <!-- Pagination -->
+                        <tr
+                          v-if="address.tokens && address.tokens.length > 0"
+                          class="bg-muted/5 border-t"
+                        >
+                          <td colspan="6" class="px-4 py-3">
+                            <div class="flex items-center justify-between">
+                              <div class="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span class="font-medium text-foreground">Rows per page:</span>
+                                <Select
+                                  :model-value="String(tokenPagination[address.id]?.pageSize || 10)"
+                                  @update:model-value="
+                                    (val) => {
+                                      tokenPagination[address.id].pageSize = Number(val)
+                                      onPageSizeChange(address.id)
+                                    }
+                                  "
+                                >
+                                  <SelectTrigger class="w-20 h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="10">10</SelectItem>
+                                    <SelectItem value="20">20</SelectItem>
+                                    <SelectItem value="50">50</SelectItem>
+                                    <SelectItem value="100">100</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <span>
+                                  Items {{ getStartIndex(address.id) }}-{{
+                                    getEndIndex(address.id)
+                                  }}
+                                  of {{ address.tokens.length }}
+                                </span>
+                                <Badge variant="secondary">
+                                  Page {{ tokenPagination[address.id]?.currentPage || 1 }} of
+                                  {{ getTotalPages(address.id) }}
+                                </Badge>
                               </div>
-                              <span class="chain-name">{{ chain.name || chain.chainId }}</span>
-                              <div class="chain-assets">
-                                <div class="asset-icons">
+                              <div class="flex gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  class="h-8 w-8"
+                                  @click="goToFirstPage(address.id)"
+                                  :disabled="isFirstPage(address.id)"
+                                  title="First page"
+                                >
+                                  ⟨⟨
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  class="h-8 w-8"
+                                  @click="goToPreviousPage(address.id)"
+                                  :disabled="isFirstPage(address.id)"
+                                  title="Previous page"
+                                >
+                                  ⟨
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  class="h-8 w-8"
+                                  @click="goToNextPage(address.id)"
+                                  :disabled="isLastPage(address.id)"
+                                  title="Next page"
+                                >
+                                  ⟩
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  class="h-8 w-8"
+                                  @click="goToLastPage(address.id)"
+                                  :disabled="isLastPage(address.id)"
+                                  title="Last page"
+                                >
+                                  ⟩⟩
+                                </Button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </template>
+
+                      <!-- Per Chain View -->
+                      <template v-if="addressViewMode[address.id] === 'perChain'">
+                        <template
+                          v-for="chain in getAddressChainGroups(address.id)"
+                          :key="chain.chainId"
+                        >
+                          <!-- Chain Group Row -->
+                          <tr
+                            class="bg-muted/20 hover:bg-muted/30 cursor-pointer transition-colors"
+                            @click="toggleAddressChain(address.id, chain.chainId)"
+                          >
+                            <td colspan="6" class="px-4 py-3">
+                              <div class="flex items-center gap-3">
+                                <span class="text-xs text-muted-foreground">
+                                  {{
+                                    expandedAddressChains[`${address.id}_${chain.chainId}`]
+                                      ? '▼'
+                                      : '▶'
+                                  }}
+                                </span>
+                                <img
+                                  v-if="chain.logoUrl && !failedChainImages[chain.chainId]"
+                                  :src="chain.logoUrl"
+                                  :alt="chain.name"
+                                  class="w-7 h-7 rounded-full object-cover"
+                                  @error="failedChainImages[chain.chainId] = true"
+                                />
+                                <div
+                                  v-else
+                                  class="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-xs font-semibold"
+                                >
+                                  {{ (chain.name || chain.chainId || '?').charAt(0).toUpperCase() }}
+                                </div>
+                                <span class="font-medium">{{ chain.name || chain.chainId }}</span>
+                                <div class="flex-1 flex items-center justify-center gap-1">
                                   <div
                                     v-for="token in chain.tokens.slice(0, 2)"
                                     :key="token.id"
-                                    class="token-logo-wrapper-small"
+                                    class="w-6 h-6"
                                   >
                                     <img
                                       v-if="
@@ -344,422 +657,579 @@
                                       :src="token.logo_url"
                                       :alt="token.symbol"
                                       :title="token.symbol"
-                                      class="asset-token-logo-small"
+                                      class="w-6 h-6 rounded-full border object-cover"
                                       @error="handleImageError($event, token.id)"
                                     />
                                     <div
                                       v-else
-                                      class="asset-token-fallback-small"
+                                      class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
                                       :title="token.symbol"
                                     >
                                       {{ token.symbol.substring(0, 2) }}
                                     </div>
                                   </div>
-                                  <span v-if="chain.tokens.length > 2" class="asset-count-small">
+                                  <span
+                                    v-if="chain.tokens.length > 2"
+                                    class="text-xs text-muted-foreground"
+                                  >
                                     +{{ chain.tokens.length - 2 }}
                                   </span>
                                 </div>
-                              </div>
-                              <span class="chain-value">
-                                {{ currencySymbols[selectedCurrency]
-                                }}{{ formatValue(chain.totalValue) }}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                        <template v-if="expandedAddressChains[`${address.id}_${chain.chainId}`]">
-                          <!-- 链代币标题 -->
-                          <tr class="token-header-row">
-                            <td colspan="6">
-                              <div class="token-detail token-header">
-                                <div class="token-icon-wrapper">Asset</div>
-                                <div class="token-info-detail"></div>
-                                <div class="token-location">Location</div>
-                                <div class="token-price">Price in {{ selectedCurrency }}</div>
-                                <div class="token-balance">Amount</div>
-                                <div class="token-value">{{ selectedCurrency }} Value</div>
+                                <span class="font-mono font-semibold">
+                                  {{ currencySymbols[selectedCurrency]
+                                  }}{{ formatValue(chain.totalValue) }}
+                                </span>
                               </div>
                             </td>
                           </tr>
-                          <TokenDetailRow
-                            v-for="token in getPaginatedAddressChainTokens(
-                              address.id,
-                              chain.chainId
-                            )"
-                            :key="token.id"
-                            :token="token"
-                          />
-                          <!-- 链分页 -->
-                          <tr class="pagination-row">
-                            <td colspan="6">
-                              <div class="pagination-controls">
-                                <div class="pagination-info">
-                                  <span class="pagination-label">Rows per page:</span>
-                                  <select
-                                    v-model="
-                                      addressChainPagination[`${address.id}_${chain.chainId}`]
-                                        .pageSize
-                                    "
-                                    @change="
-                                      onAddressChainPageSizeChange(address.id, chain.chainId)
-                                    "
-                                    class="page-size-select"
-                                  >
-                                    <option :value="10">10</option>
-                                    <option :value="20">20</option>
-                                    <option :value="50">50</option>
-                                    <option :value="100">100</option>
-                                  </select>
-                                  <span class="pagination-range">
-                                    Items #
-                                    {{ getAddressChainStartIndex(address.id, chain.chainId) }}-{{
-                                      getAddressChainEndIndex(address.id, chain.chainId)
-                                    }}
-                                    of {{ chain.tokens.length }}
-                                  </span>
-                                  <span class="pagination-page">
-                                    Page
-                                    {{
-                                      addressChainPagination[`${address.id}_${chain.chainId}`]
-                                        ?.currentPage || 1
-                                    }}
-                                    of
-                                    {{ getAddressChainTotalPages(address.id, chain.chainId) }}
-                                  </span>
+
+                          <!-- Expanded Chain Tokens -->
+                          <template v-if="expandedAddressChains[`${address.id}_${chain.chainId}`]">
+                            <!-- Chain Token Header -->
+                            <tr class="bg-muted/30 border-b">
+                              <td colspan="6" class="p-0">
+                                <div
+                                  class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 px-4 py-3 text-xs font-medium text-muted-foreground uppercase"
+                                >
+                                  <div>Asset</div>
+                                  <div></div>
+                                  <div>Location</div>
+                                  <div class="text-right">Price in {{ selectedCurrency }}</div>
+                                  <div class="text-right">Amount</div>
+                                  <div class="text-right">{{ selectedCurrency }} Value</div>
                                 </div>
-                                <div class="pagination-buttons">
-                                  <button
-                                    @click="goToAddressChainFirstPage(address.id, chain.chainId)"
-                                    :disabled="isAddressChainFirstPage(address.id, chain.chainId)"
-                                    class="pagination-btn"
-                                    title="First page"
+                              </td>
+                            </tr>
+                            <TokenDetailRow
+                              v-for="token in getPaginatedAddressChainTokens(
+                                address.id,
+                                chain.chainId
+                              )"
+                              :key="token.id"
+                              :token="token"
+                            />
+
+                            <!-- Chain Pagination -->
+                            <tr class="bg-muted/5 border-t">
+                              <td colspan="6" class="px-4 py-3">
+                                <div class="flex items-center justify-between">
+                                  <div
+                                    class="flex items-center gap-4 text-sm text-muted-foreground"
                                   >
-                                    ⟨⟨
-                                  </button>
-                                  <button
-                                    @click="goToAddressChainPreviousPage(address.id, chain.chainId)"
-                                    :disabled="isAddressChainFirstPage(address.id, chain.chainId)"
-                                    class="pagination-btn"
-                                    title="Previous page"
-                                  >
-                                    ⟨
-                                  </button>
-                                  <button
-                                    @click="goToAddressChainNextPage(address.id, chain.chainId)"
-                                    :disabled="isAddressChainLastPage(address.id, chain.chainId)"
-                                    class="pagination-btn"
-                                    title="Next page"
-                                  >
-                                    ⟩
-                                  </button>
-                                  <button
-                                    @click="goToAddressChainLastPage(address.id, chain.chainId)"
-                                    :disabled="isAddressChainLastPage(address.id, chain.chainId)"
-                                    class="pagination-btn"
-                                    title="Last page"
-                                  >
-                                    ⟩⟩
-                                  </button>
+                                    <span class="font-medium text-foreground">Rows per page:</span>
+                                    <Select
+                                      :model-value="
+                                        String(
+                                          addressChainPagination[`${address.id}_${chain.chainId}`]
+                                            ?.pageSize || 10
+                                        )
+                                      "
+                                      @update:model-value="
+                                        (val) => {
+                                          addressChainPagination[
+                                            `${address.id}_${chain.chainId}`
+                                          ].pageSize = Number(val)
+                                          onAddressChainPageSizeChange(address.id, chain.chainId)
+                                        }
+                                      "
+                                    >
+                                      <SelectTrigger class="w-20 h-8">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="10">10</SelectItem>
+                                        <SelectItem value="20">20</SelectItem>
+                                        <SelectItem value="50">50</SelectItem>
+                                        <SelectItem value="100">100</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <span>
+                                      Items
+                                      {{ getAddressChainStartIndex(address.id, chain.chainId) }}-{{
+                                        getAddressChainEndIndex(address.id, chain.chainId)
+                                      }}
+                                      of {{ chain.tokens.length }}
+                                    </span>
+                                    <Badge variant="secondary">
+                                      Page
+                                      {{
+                                        addressChainPagination[`${address.id}_${chain.chainId}`]
+                                          ?.currentPage || 1
+                                      }}
+                                      of {{ getAddressChainTotalPages(address.id, chain.chainId) }}
+                                    </Badge>
+                                  </div>
+                                  <div class="flex gap-1">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      class="h-8 w-8"
+                                      @click="goToAddressChainFirstPage(address.id, chain.chainId)"
+                                      :disabled="isAddressChainFirstPage(address.id, chain.chainId)"
+                                      title="First page"
+                                    >
+                                      ⟨⟨
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      class="h-8 w-8"
+                                      @click="
+                                        goToAddressChainPreviousPage(address.id, chain.chainId)
+                                      "
+                                      :disabled="isAddressChainFirstPage(address.id, chain.chainId)"
+                                      title="Previous page"
+                                    >
+                                      ⟨
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      class="h-8 w-8"
+                                      @click="goToAddressChainNextPage(address.id, chain.chainId)"
+                                      :disabled="isAddressChainLastPage(address.id, chain.chainId)"
+                                      title="Next page"
+                                    >
+                                      ⟩
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      class="h-8 w-8"
+                                      @click="goToAddressChainLastPage(address.id, chain.chainId)"
+                                      :disabled="isAddressChainLastPage(address.id, chain.chainId)"
+                                      title="Last page"
+                                    >
+                                      ⟩⟩
+                                    </Button>
+                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                          </tr>
+                              </td>
+                            </tr>
+                          </template>
                         </template>
                       </template>
                     </template>
                   </template>
                 </template>
               </template>
-            </template>
 
-            <tr class="total-row">
-              <td><strong>Total</strong></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td>
-                <strong
-                  >{{ currencySymbols[selectedCurrency] }}{{ formatValue(getTotalValue()) }}</strong
+              <!-- Total Row -->
+              <tr class="bg-muted font-semibold border-t-2">
+                <td class="px-4 py-4">Total</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td class="px-4 py-4 font-mono">
+                  {{ currencySymbols[selectedCurrency] }}{{ formatValue(getTotalValue()) }}
+                </td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+
+    <!-- Add Wallet Dialog -->
+    <Dialog :open="showAddWalletModal" @update:open="showAddWalletModal = $event">
+      <DialogContent class="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Add Wallet</DialogTitle>
+          <DialogDescription>Create a new wallet to organize your addresses</DialogDescription>
+        </DialogHeader>
+        <form @submit.prevent="handleAddWallet" class="space-y-4 py-4">
+          <div class="space-y-2">
+            <Label for="wallet-name">Wallet Name *</Label>
+            <Input id="wallet-name" v-model="newWallet.name" required placeholder="My Wallet" />
+          </div>
+          <div class="space-y-2">
+            <Label for="wallet-description">Description (optional)</Label>
+            <Input
+              id="wallet-description"
+              v-model="newWallet.description"
+              placeholder="Wallet description"
+            />
+          </div>
+          <div class="space-y-2">
+            <Label>Tags (optional)</Label>
+            <div class="border rounded-lg p-3 space-y-2">
+              <div class="flex flex-wrap gap-2 min-h-[24px]">
+                <Badge
+                  v-for="(tag, index) in newWallet.tags"
+                  :key="index"
+                  variant="secondary"
+                  class="gap-1"
                 >
-              </td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 添加钱包模态框 -->
-    <div v-if="showAddWalletModal" class="modal-overlay" @click="showAddWalletModal = false">
-      <div class="modal" @click.stop>
-        <h2>Add Wallet</h2>
-        <form @submit.prevent="handleAddWallet">
-          <div class="form-group">
-            <label>Wallet Name</label>
-            <input v-model="newWallet.name" type="text" required placeholder="My Wallet" />
-          </div>
-          <div class="form-group">
-            <label>Description (optional)</label>
-            <textarea v-model="newWallet.description" placeholder="Wallet description"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Tags (optional)</label>
-            <div class="tags-input">
-              <div class="tags-display">
-                <span v-for="(tag, index) in newWallet.tags" :key="index" class="tag-item">
                   {{ tag }}
-                  <button type="button" class="tag-remove" @click="removeNewWalletTag(index)">
+                  <button
+                    type="button"
+                    @click="removeNewWalletTag(index)"
+                    class="ml-1 hover:text-destructive"
+                  >
                     ×
                   </button>
-                </span>
+                </Badge>
               </div>
-              <div class="tag-add-section">
-                <input
+              <div class="flex gap-2">
+                <Input
                   v-model="newWalletTagInput"
-                  type="text"
                   placeholder="Add a tag"
                   @keyup.enter="addNewWalletTag"
+                  class="flex-1"
                 />
-                <button type="button" class="btn-add-tag" @click="addNewWalletTag">Add</button>
+                <Button type="button" @click="addNewWalletTag" size="sm">Add</Button>
               </div>
             </div>
           </div>
-          <div class="form-group">
-            <label>Enabled Chains (optional - leave empty for all chains)</label>
-            <div class="chains-selection">
-              <div v-for="chain in availableChains" :key="chain.id" class="chain-item">
-                <img
-                  v-if="!failedChainImages[chain.id]"
-                  :src="`/images/chains/${chain.id}.png`"
-                  :alt="chain.name"
-                  class="chain-logo-inline"
-                  @error="failedChainImages[chain.id] = true"
-                />
-                <div v-else class="chain-logo-placeholder">
-                  {{ (chain.name || chain.id || '?').charAt(0).toUpperCase() }}
-                </div>
-                <div class="chain-name">{{ chain.name || chain.id || 'Unknown' }}</div>
+          <div class="space-y-2">
+            <Label>Enabled Chains (optional)</Label>
+            <div class="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-1">
+              <div
+                v-for="chain in availableChains"
+                :key="chain.id"
+                class="flex items-center gap-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+                :class="{
+                  'bg-primary/5 border-primary': newWallet.enabled_chains.includes(chain.id)
+                }"
+              >
                 <input
                   type="checkbox"
                   :id="`chain-${chain.id}`"
                   :value="chain.id"
                   v-model="newWallet.enabled_chains"
-                  class="chain-checkbox"
+                  class="cursor-pointer"
                 />
+                <Label
+                  :for="`chain-${chain.id}`"
+                  class="flex items-center gap-2 cursor-pointer flex-1"
+                >
+                  <img
+                    v-if="!failedChainImages[chain.id]"
+                    :src="`/images/chains/${chain.id}.png`"
+                    :alt="chain.name"
+                    class="w-6 h-6 rounded-full object-cover"
+                    @error="failedChainImages[chain.id] = true"
+                  />
+                  <div
+                    v-else
+                    class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-xs font-semibold"
+                  >
+                    {{ (chain.name || chain.id || '?').charAt(0).toUpperCase() }}
+                  </div>
+                  <span class="text-sm">{{ chain.name || chain.id || 'Unknown' }}</span>
+                </Label>
               </div>
             </div>
           </div>
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" @click="showAddWalletModal = false">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">Add Wallet</button>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showAddWalletModal = false"
+              >Cancel</Button
+            >
+            <Button type="submit">Add Wallet</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
 
-    <!-- 编辑钱包模态框 -->
-    <div
-      v-if="showEditWalletModal && editingWallet"
-      class="modal-overlay"
-      @click="showEditWalletModal = false"
-    >
-      <div class="modal" @click.stop>
-        <h2>Edit Wallet</h2>
-        <form @submit.prevent="handleEditWallet">
-          <div class="form-group">
-            <label>Wallet Name</label>
-            <input v-model="editingWallet.name" type="text" required placeholder="My Wallet" />
+    <!-- Edit Wallet Dialog -->
+    <Dialog :open="showEditWalletModal" @update:open="showEditWalletModal = $event">
+      <DialogContent class="sm:max-w-[500px]" v-if="editingWallet">
+        <DialogHeader>
+          <DialogTitle>Edit Wallet</DialogTitle>
+          <DialogDescription>Update wallet information</DialogDescription>
+        </DialogHeader>
+        <form @submit.prevent="handleEditWallet" class="space-y-4 py-4">
+          <div class="space-y-2">
+            <Label for="edit-wallet-name">Wallet Name *</Label>
+            <Input
+              id="edit-wallet-name"
+              v-model="editingWallet.name"
+              required
+              placeholder="My Wallet"
+            />
           </div>
-          <div class="form-group">
-            <label>Description (optional)</label>
-            <textarea
+          <div class="space-y-2">
+            <Label for="edit-wallet-description">Description (optional)</Label>
+            <Input
+              id="edit-wallet-description"
               v-model="editingWallet.description"
               placeholder="Wallet description"
-            ></textarea>
+            />
           </div>
-          <div class="form-group">
-            <label>Tags (optional)</label>
-            <div class="tags-input">
-              <div class="tags-display">
-                <span v-for="(tag, index) in editingWallet.tags" :key="index" class="tag-item">
+          <div class="space-y-2">
+            <Label>Tags (optional)</Label>
+            <div class="border rounded-lg p-3 space-y-2">
+              <div class="flex flex-wrap gap-2 min-h-[24px]">
+                <Badge
+                  v-for="(tag, index) in editingWallet.tags"
+                  :key="index"
+                  variant="secondary"
+                  class="gap-1"
+                >
                   {{ tag }}
-                  <button type="button" class="tag-remove" @click="removeEditWalletTag(index)">
+                  <button
+                    type="button"
+                    @click="removeEditWalletTag(index)"
+                    class="ml-1 hover:text-destructive"
+                  >
                     ×
                   </button>
-                </span>
+                </Badge>
               </div>
-              <div class="tag-add-section">
-                <input
+              <div class="flex gap-2">
+                <Input
                   v-model="editWalletTagInput"
-                  type="text"
                   placeholder="Add a tag"
                   @keyup.enter="addEditWalletTag"
+                  class="flex-1"
                 />
-                <button type="button" class="btn-add-tag" @click="addEditWalletTag">Add</button>
+                <Button type="button" @click="addEditWalletTag" size="sm">Add</Button>
               </div>
             </div>
           </div>
-          <div class="form-group">
-            <label>Enabled Chains (optional - leave empty for all chains)</label>
-            <div class="chains-selection">
-              <div v-for="chain in availableChains" :key="chain.id" class="chain-item">
-                <img
-                  v-if="!failedChainImages[chain.id]"
-                  :src="`/images/chains/${chain.id}.png`"
-                  :alt="chain.name"
-                  class="chain-logo-inline"
-                  @error="failedChainImages[chain.id] = true"
-                />
-                <div v-else class="chain-logo-placeholder">
-                  {{ (chain.name || chain.id || '?').charAt(0).toUpperCase() }}
-                </div>
-                <div class="chain-name">{{ chain.name || chain.id || 'Unknown' }}</div>
+          <div class="space-y-2">
+            <Label>Enabled Chains (optional)</Label>
+            <div class="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-1">
+              <div
+                v-for="chain in availableChains"
+                :key="chain.id"
+                class="flex items-center gap-2 p-3 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+                :class="{
+                  'bg-primary/5 border-primary': editingWallet.enabled_chains.includes(chain.id)
+                }"
+              >
                 <input
                   type="checkbox"
                   :id="`edit-chain-${chain.id}`"
                   :value="chain.id"
                   v-model="editingWallet.enabled_chains"
-                  class="chain-checkbox"
+                  class="cursor-pointer"
                 />
+                <Label
+                  :for="`edit-chain-${chain.id}`"
+                  class="flex items-center gap-2 cursor-pointer flex-1"
+                >
+                  <img
+                    v-if="!failedChainImages[chain.id]"
+                    :src="`/images/chains/${chain.id}.png`"
+                    :alt="chain.name"
+                    class="w-6 h-6 rounded-full object-cover"
+                    @error="failedChainImages[chain.id] = true"
+                  />
+                  <div
+                    v-else
+                    class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-xs font-semibold"
+                  >
+                    {{ (chain.name || chain.id || '?').charAt(0).toUpperCase() }}
+                  </div>
+                  <span class="text-sm">{{ chain.name || chain.id || 'Unknown' }}</span>
+                </Label>
               </div>
             </div>
           </div>
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" @click="showEditWalletModal = false">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">Save Changes</button>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showEditWalletModal = false"
+              >Cancel</Button
+            >
+            <Button type="submit">Save Changes</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
 
-    <!-- 添加地址模态框 -->
-    <div v-if="showAddAddressModal" class="modal-overlay" @click="showAddAddressModal = false">
-      <div class="modal" @click.stop>
-        <h2>Add Address</h2>
-        <form @submit.prevent="handleAddAddress">
-          <div class="form-group">
-            <label>Wallet</label>
-            <select v-model="newAddress.wallet_id" required>
-              <option value="">Select a wallet</option>
-              <option v-for="wallet in wallets" :key="wallet.id" :value="wallet.id">
-                {{ wallet.name }}
-              </option>
-            </select>
+    <!-- Add Address Dialog -->
+    <Dialog :open="showAddAddressModal" @update:open="showAddAddressModal = $event">
+      <DialogContent class="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Add Address</DialogTitle>
+          <DialogDescription>Add a new blockchain address to a wallet</DialogDescription>
+        </DialogHeader>
+        <form @submit.prevent="handleAddAddress" class="space-y-4 py-4">
+          <div class="space-y-2">
+            <Label for="address-wallet">Wallet *</Label>
+            <Select v-model="newAddress.wallet_id" required>
+              <SelectTrigger id="address-wallet">
+                <SelectValue placeholder="Select a wallet" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="wallet in wallets" :key="wallet.id" :value="String(wallet.id)">
+                  {{ wallet.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <div class="form-group">
-            <label>Address</label>
-            <input v-model="newAddress.address" type="text" required placeholder="0x..." />
+          <div class="space-y-2">
+            <Label for="address-value">Address *</Label>
+            <Input
+              id="address-value"
+              v-model="newAddress.address"
+              required
+              placeholder="0x..."
+              class="font-mono"
+            />
           </div>
-          <div class="form-group">
-            <label>Label (optional)</label>
-            <input v-model="newAddress.label" type="text" placeholder="Main Address" />
+          <div class="space-y-2">
+            <Label for="address-label">Label (optional)</Label>
+            <Input id="address-label" v-model="newAddress.label" placeholder="Main Address" />
           </div>
-          <div class="form-group">
-            <label>Tags (optional)</label>
-            <div class="tags-input">
-              <div class="tags-display">
-                <span v-for="(tag, index) in newAddress.tags" :key="index" class="tag-item">
+          <div class="space-y-2">
+            <Label>Tags (optional)</Label>
+            <div class="border rounded-lg p-3 space-y-2">
+              <div class="flex flex-wrap gap-2 min-h-[24px]">
+                <Badge
+                  v-for="(tag, index) in newAddress.tags"
+                  :key="index"
+                  variant="secondary"
+                  class="gap-1"
+                >
                   {{ tag }}
-                  <button type="button" class="tag-remove" @click="removeNewAddressTag(index)">
+                  <button
+                    type="button"
+                    @click="removeNewAddressTag(index)"
+                    class="ml-1 hover:text-destructive"
+                  >
                     ×
                   </button>
-                </span>
+                </Badge>
               </div>
-              <div class="tag-add-section">
-                <input
+              <div class="flex gap-2">
+                <Input
                   v-model="newAddressTagInput"
-                  type="text"
                   placeholder="Add a tag"
                   @keyup.enter="addNewAddressTag"
+                  class="flex-1"
                 />
-                <button type="button" class="btn-add-tag" @click="addNewAddressTag">Add</button>
+                <Button type="button" @click="addNewAddressTag" size="sm">Add</Button>
               </div>
             </div>
           </div>
-          <div class="form-group">
-            <label>Chain Type</label>
-            <select v-model="newAddress.chain_type">
-              <option value="EVM">EVM</option>
-            </select>
+          <div class="space-y-2">
+            <Label for="chain-type">Chain Type</Label>
+            <Select v-model="newAddress.chain_type">
+              <SelectTrigger id="chain-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EVM">EVM</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" @click="showAddAddressModal = false">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">Add Address</button>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showAddAddressModal = false"
+              >Cancel</Button
+            >
+            <Button type="submit">Add Address</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
 
-    <!-- 编辑地址模态框 -->
-    <div
-      v-if="showEditAddressModal && editingAddress"
-      class="modal-overlay"
-      @click="showEditAddressModal = false"
-    >
-      <div class="modal" @click.stop>
-        <h2>Edit Address</h2>
-        <form @submit.prevent="handleEditAddress">
-          <div class="form-group">
-            <label>Address</label>
-            <input v-model="editingAddress.address" type="text" disabled placeholder="0x..." />
+    <!-- Edit Address Dialog -->
+    <Dialog :open="showEditAddressModal" @update:open="showEditAddressModal = $event">
+      <DialogContent class="sm:max-w-[500px]" v-if="editingAddress">
+        <DialogHeader>
+          <DialogTitle>Edit Address</DialogTitle>
+          <DialogDescription>Update address information</DialogDescription>
+        </DialogHeader>
+        <form @submit.prevent="handleEditAddress" class="space-y-4 py-4">
+          <div class="space-y-2">
+            <Label for="edit-address-value">Address</Label>
+            <Input
+              id="edit-address-value"
+              v-model="editingAddress.address"
+              disabled
+              placeholder="0x..."
+              class="font-mono"
+            />
           </div>
-          <div class="form-group">
-            <label>Label</label>
-            <input v-model="editingAddress.label" type="text" placeholder="Address Label" />
+          <div class="space-y-2">
+            <Label for="edit-address-label">Label</Label>
+            <Input
+              id="edit-address-label"
+              v-model="editingAddress.label"
+              placeholder="Address Label"
+            />
           </div>
-          <div class="form-group">
-            <label>Tags (optional)</label>
-            <div class="tags-input">
-              <div class="tags-display">
-                <span v-for="(tag, index) in editingAddress.tags" :key="index" class="tag-item">
+          <div class="space-y-2">
+            <Label>Tags (optional)</Label>
+            <div class="border rounded-lg p-3 space-y-2">
+              <div class="flex flex-wrap gap-2 min-h-[24px]">
+                <Badge
+                  v-for="(tag, index) in editingAddress.tags"
+                  :key="index"
+                  variant="secondary"
+                  class="gap-1"
+                >
                   {{ tag }}
-                  <button type="button" class="tag-remove" @click="removeEditAddressTag(index)">
+                  <button
+                    type="button"
+                    @click="removeEditAddressTag(index)"
+                    class="ml-1 hover:text-destructive"
+                  >
                     ×
                   </button>
-                </span>
+                </Badge>
               </div>
-              <div class="tag-add-section">
-                <input
+              <div class="flex gap-2">
+                <Input
                   v-model="editAddressTagInput"
-                  type="text"
                   placeholder="Add a tag"
                   @keyup.enter="addEditAddressTag"
+                  class="flex-1"
                 />
-                <button type="button" class="btn-add-tag" @click="addEditAddressTag">Add</button>
+                <Button type="button" @click="addEditAddressTag" size="sm">Add</Button>
               </div>
             </div>
           </div>
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" @click="showEditAddressModal = false">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary">Save Changes</button>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showEditAddressModal = false"
+              >Cancel</Button
+            >
+            <Button type="submit">Save Changes</Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useWalletStore } from '../stores/wallet'
 import { storeToRefs } from 'pinia'
 import { chainsAPI } from '../api/client'
 import { useCurrency } from '../composables/useCurrency'
+import type { Wallet, Address, Chain } from '../types'
 import CurrencySelector from '../components/CurrencySelector.vue'
 import TokenDetailRow from '../components/TokenDetailRow.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const walletStore = useWalletStore()
 const { wallets, addresses, loading } = storeToRefs(walletStore)
 
-const availableChains = ref([])
+const availableChains = ref<Chain[]>([])
 
 // Use currency composable
 const {
@@ -773,221 +1243,174 @@ const {
   restoreSavedCurrency
 } = useCurrency()
 
-const expandedWallets = reactive({})
-const expandedAddresses = reactive({})
-const addressViewMode = reactive({}) // Track view mode for each address ('aggregated' or 'perChain')
-const expandedAddressChains = reactive({}) // Track expanded chains for each address
-const failedImages = reactive({}) // Track failed image loads
-const failedChainImages = reactive({}) // Track failed chain logo loads
-const tokenPagination = reactive({}) // Track pagination state for each address
-const addressChainPagination = reactive({}) // Track pagination state for each address's chain
+const expandedWallets = reactive<Record<number, boolean>>({})
+const expandedAddresses = reactive<Record<number, boolean>>({})
+const addressViewMode = reactive<Record<number, string>>({})
+const expandedAddressChains = reactive<Record<string, boolean>>({})
+const failedImages = reactive<Record<number, boolean>>({})
+const failedChainImages = reactive<Record<string, boolean>>({})
+const tokenPagination = reactive<Record<number, { currentPage: number; pageSize: number }>>({})
+const addressChainPagination = reactive<Record<string, { currentPage: number; pageSize: number }>>(
+  {}
+)
+
 const showAddWalletModal = ref(false)
 const showEditWalletModal = ref(false)
 const showAddAddressModal = ref(false)
 const showEditAddressModal = ref(false)
-const editingWallet = ref(null)
-const editingAddress = ref(null)
+const editingWallet = ref<any>(null)
+const editingAddress = ref<any>(null)
 
 const newWallet = ref({
   name: '',
   description: '',
-  tags: [],
-  enabled_chains: []
+  tags: [] as string[],
+  enabled_chains: [] as string[]
 })
 
 const newAddress = ref({
   wallet_id: '',
   address: '',
   label: '',
-  tags: [],
+  tags: [] as string[],
   chain_type: 'EVM'
 })
 
-// 标签输入状态
 const newWalletTagInput = ref('')
 const editWalletTagInput = ref('')
 const newAddressTagInput = ref('')
 const editAddressTagInput = ref('')
 
 onMounted(async () => {
-  // 恢复保存的货币偏好设置
   restoreSavedCurrency()
-
   await walletStore.fetchWallets()
   await walletStore.fetchAddresses()
 
-  // 获取可用的链
   try {
     const response = await chainsAPI.list()
     availableChains.value = response.data
-    console.log('Available chains loaded:', availableChains.value)
   } catch (error) {
     console.error('Failed to fetch chains:', error)
   }
 
-  // 从代币数据更新汇率
   updateExchangeRates(addresses.value)
-
-  // 调试：检查我们有哪些logo URL
-  console.log('Addresses with tokens:', addresses.value)
-  addresses.value.forEach((addr) => {
-    if (addr.tokens && addr.tokens.length > 0) {
-      console.log(
-        `Address ${addr.address} tokens:`,
-        addr.tokens.map((t) => ({
-          symbol: t.symbol,
-          logo_url: t.logo_url,
-          has_logo: !!t.logo_url
-        }))
-      )
-    }
-  })
 })
 
-const toggleWallet = (walletId) => {
-  console.log('toggleWallet called with:', walletId)
-  console.log('Before:', expandedWallets)
+const toggleWallet = (walletId: number) => {
   expandedWallets[walletId] = !expandedWallets[walletId]
-  console.log('After:', expandedWallets)
 }
 
-const toggleAddress = (addressId) => {
-  console.log('toggleAddress called with:', addressId)
+const toggleAddress = (addressId: number) => {
   expandedAddresses[addressId] = !expandedAddresses[addressId]
-  console.log('After:', expandedAddresses)
-
-  // 初始化此地址的视图模式（默认为聚合视图）
   if (!addressViewMode[addressId]) {
     addressViewMode[addressId] = 'aggregated'
   }
-
-  // 如果不存在，初始化此地址的分页
   if (!tokenPagination[addressId]) {
-    tokenPagination[addressId] = {
-      currentPage: 1,
-      pageSize: 10
-    }
+    tokenPagination[addressId] = { currentPage: 1, pageSize: 10 }
   }
 }
 
-// 设置特定地址的视图模式
-const setAddressViewMode = (addressId, mode) => {
+const setAddressViewMode = (addressId: number, mode: string) => {
   addressViewMode[addressId] = mode
 }
 
-// 分页辅助函数
-const initPagination = (addressId) => {
+const initPagination = (addressId: number) => {
   if (!tokenPagination[addressId]) {
-    tokenPagination[addressId] = {
-      currentPage: 1,
-      pageSize: 10
-    }
+    tokenPagination[addressId] = { currentPage: 1, pageSize: 10 }
   }
 }
 
-const getPaginatedTokens = (addressId) => {
+const getPaginatedTokens = (addressId: number) => {
   const address = addresses.value.find((a) => a.id === addressId)
   if (!address || !address.tokens) return []
 
   initPagination(addressId)
   const pagination = tokenPagination[addressId]
 
-  // 按选定货币的价值对代币进行排序（降序）
   const sortedTokens = [...address.tokens].sort((a, b) => {
-    // 首先获取USD价值
     const usdValueA = a.usd_value || 0
     const usdValueB = b.usd_value || 0
-
-    // 使用汇率转换为选定的货币
     const rate = exchangeRates.value[selectedCurrency.value] || 1
     const valueA = rate === 0 ? usdValueA : usdValueA / rate
     const valueB = rate === 0 ? usdValueB : usdValueB / rate
-
     return valueB - valueA
   })
 
   const start = (pagination.currentPage - 1) * pagination.pageSize
   const end = start + pagination.pageSize
-
   return sortedTokens.slice(start, end)
 }
 
-const getTotalPages = (addressId) => {
+const getTotalPages = (addressId: number) => {
   const address = addresses.value.find((a) => a.id === addressId)
   if (!address || !address.tokens) return 1
-
   initPagination(addressId)
   const pagination = tokenPagination[addressId]
   return Math.ceil(address.tokens.length / pagination.pageSize)
 }
 
-const getStartIndex = (addressId) => {
+const getStartIndex = (addressId: number) => {
   const address = addresses.value.find((a) => a.id === addressId)
   if (!address || !address.tokens || address.tokens.length === 0) return 0
-
   initPagination(addressId)
   const pagination = tokenPagination[addressId]
   return (pagination.currentPage - 1) * pagination.pageSize + 1
 }
 
-const getEndIndex = (addressId) => {
+const getEndIndex = (addressId: number) => {
   const address = addresses.value.find((a) => a.id === addressId)
   if (!address || !address.tokens) return 0
-
   initPagination(addressId)
   const pagination = tokenPagination[addressId]
   const end = pagination.currentPage * pagination.pageSize
   return Math.min(end, address.tokens.length)
 }
 
-const isFirstPage = (addressId) => {
+const isFirstPage = (addressId: number) => {
   initPagination(addressId)
   return tokenPagination[addressId].currentPage === 1
 }
 
-const isLastPage = (addressId) => {
+const isLastPage = (addressId: number) => {
   initPagination(addressId)
   return tokenPagination[addressId].currentPage >= getTotalPages(addressId)
 }
 
-const goToFirstPage = (addressId) => {
+const goToFirstPage = (addressId: number) => {
   initPagination(addressId)
   tokenPagination[addressId].currentPage = 1
 }
 
-const goToPreviousPage = (addressId) => {
+const goToPreviousPage = (addressId: number) => {
   initPagination(addressId)
   if (tokenPagination[addressId].currentPage > 1) {
     tokenPagination[addressId].currentPage--
   }
 }
 
-const goToNextPage = (addressId) => {
+const goToNextPage = (addressId: number) => {
   initPagination(addressId)
   if (tokenPagination[addressId].currentPage < getTotalPages(addressId)) {
     tokenPagination[addressId].currentPage++
   }
 }
 
-const goToLastPage = (addressId) => {
+const goToLastPage = (addressId: number) => {
   initPagination(addressId)
   tokenPagination[addressId].currentPage = getTotalPages(addressId)
 }
 
-const onPageSizeChange = (addressId) => {
+const onPageSizeChange = (addressId: number) => {
   initPagination(addressId)
-  // 页面大小改变时重置到第一页
   tokenPagination[addressId].currentPage = 1
 }
 
-// 地址链分组函数
-const getAddressChainGroups = (addressId) => {
+const getAddressChainGroups = (addressId: number) => {
   const address = addresses.value.find((a) => a.id === addressId)
   if (!address || !address.tokens) return []
 
   const chainMap = new Map()
 
-  // 为此地址按链收集代币
   address.tokens.forEach((token) => {
     if (!chainMap.has(token.chain_id)) {
       const chainInfo = availableChains.value.find((c) => c.id === token.chain_id)
@@ -1002,9 +1425,8 @@ const getAddressChainGroups = (addressId) => {
     chainMap.get(token.chain_id).tokens.push(token)
   })
 
-  // 计算总价值并对代币进行排序
-  const chains = Array.from(chainMap.values()).map((chain) => {
-    const sortedTokens = [...chain.tokens].sort((a, b) => {
+  const chains = Array.from(chainMap.values()).map((chain: any) => {
+    const sortedTokens = [...chain.tokens].sort((a: any, b: any) => {
       const usdValueA = a.usd_value || 0
       const usdValueB = b.usd_value || 0
       const rate = exchangeRates.value[selectedCurrency.value] || 1
@@ -1014,41 +1436,34 @@ const getAddressChainGroups = (addressId) => {
     })
 
     chain.tokens = sortedTokens
-    chain.totalValue = chain.tokens.reduce((sum, token) => sum + (token.usd_value || 0), 0)
+    chain.totalValue = chain.tokens.reduce(
+      (sum: number, token: any) => sum + (token.usd_value || 0),
+      0
+    )
     return chain
   })
 
-  // 按总价值对链进行排序（降序）
   return chains.sort((a, b) => b.totalValue - a.totalValue)
 }
 
-const toggleAddressChain = (addressId, chainId) => {
+const toggleAddressChain = (addressId: number, chainId: string) => {
   const key = `${addressId}_${chainId}`
   expandedAddressChains[key] = !expandedAddressChains[key]
-
-  // 初始化分页
   if (!addressChainPagination[key]) {
-    addressChainPagination[key] = {
-      currentPage: 1,
-      pageSize: 10
-    }
+    addressChainPagination[key] = { currentPage: 1, pageSize: 10 }
   }
 }
 
-// 地址链分页函数
-const initAddressChainPagination = (addressId, chainId) => {
+const initAddressChainPagination = (addressId: number, chainId: string) => {
   const key = `${addressId}_${chainId}`
   if (!addressChainPagination[key]) {
-    addressChainPagination[key] = {
-      currentPage: 1,
-      pageSize: 10
-    }
+    addressChainPagination[key] = { currentPage: 1, pageSize: 10 }
   }
 }
 
-const getPaginatedAddressChainTokens = (addressId, chainId) => {
+const getPaginatedAddressChainTokens = (addressId: number, chainId: string) => {
   const chains = getAddressChainGroups(addressId)
-  const chain = chains.find((c) => c.chainId === chainId)
+  const chain = chains.find((c: any) => c.chainId === chainId)
   if (!chain || !chain.tokens) return []
 
   initAddressChainPagination(addressId, chainId)
@@ -1056,37 +1471,33 @@ const getPaginatedAddressChainTokens = (addressId, chainId) => {
   const pagination = addressChainPagination[key]
   const start = (pagination.currentPage - 1) * pagination.pageSize
   const end = start + pagination.pageSize
-
   return chain.tokens.slice(start, end)
 }
 
-const getAddressChainTotalPages = (addressId, chainId) => {
+const getAddressChainTotalPages = (addressId: number, chainId: string) => {
   const chains = getAddressChainGroups(addressId)
-  const chain = chains.find((c) => c.chainId === chainId)
+  const chain = chains.find((c: any) => c.chainId === chainId)
   if (!chain || !chain.tokens) return 1
-
   initAddressChainPagination(addressId, chainId)
   const key = `${addressId}_${chainId}`
   const pagination = addressChainPagination[key]
   return Math.ceil(chain.tokens.length / pagination.pageSize)
 }
 
-const getAddressChainStartIndex = (addressId, chainId) => {
+const getAddressChainStartIndex = (addressId: number, chainId: string) => {
   const chains = getAddressChainGroups(addressId)
-  const chain = chains.find((c) => c.chainId === chainId)
+  const chain = chains.find((c: any) => c.chainId === chainId)
   if (!chain || !chain.tokens || chain.tokens.length === 0) return 0
-
   initAddressChainPagination(addressId, chainId)
   const key = `${addressId}_${chainId}`
   const pagination = addressChainPagination[key]
   return (pagination.currentPage - 1) * pagination.pageSize + 1
 }
 
-const getAddressChainEndIndex = (addressId, chainId) => {
+const getAddressChainEndIndex = (addressId: number, chainId: string) => {
   const chains = getAddressChainGroups(addressId)
-  const chain = chains.find((c) => c.chainId === chainId)
+  const chain = chains.find((c: any) => c.chainId === chainId)
   if (!chain || !chain.tokens) return 0
-
   initAddressChainPagination(addressId, chainId)
   const key = `${addressId}_${chainId}`
   const pagination = addressChainPagination[key]
@@ -1094,13 +1505,13 @@ const getAddressChainEndIndex = (addressId, chainId) => {
   return Math.min(end, chain.tokens.length)
 }
 
-const isAddressChainFirstPage = (addressId, chainId) => {
+const isAddressChainFirstPage = (addressId: number, chainId: string) => {
   initAddressChainPagination(addressId, chainId)
   const key = `${addressId}_${chainId}`
   return addressChainPagination[key].currentPage === 1
 }
 
-const isAddressChainLastPage = (addressId, chainId) => {
+const isAddressChainLastPage = (addressId: number, chainId: string) => {
   initAddressChainPagination(addressId, chainId)
   return (
     addressChainPagination[`${addressId}_${chainId}`].currentPage >=
@@ -1108,13 +1519,13 @@ const isAddressChainLastPage = (addressId, chainId) => {
   )
 }
 
-const goToAddressChainFirstPage = (addressId, chainId) => {
+const goToAddressChainFirstPage = (addressId: number, chainId: string) => {
   initAddressChainPagination(addressId, chainId)
   const key = `${addressId}_${chainId}`
   addressChainPagination[key].currentPage = 1
 }
 
-const goToAddressChainPreviousPage = (addressId, chainId) => {
+const goToAddressChainPreviousPage = (addressId: number, chainId: string) => {
   initAddressChainPagination(addressId, chainId)
   const key = `${addressId}_${chainId}`
   if (addressChainPagination[key].currentPage > 1) {
@@ -1122,7 +1533,7 @@ const goToAddressChainPreviousPage = (addressId, chainId) => {
   }
 }
 
-const goToAddressChainNextPage = (addressId, chainId) => {
+const goToAddressChainNextPage = (addressId: number, chainId: string) => {
   initAddressChainPagination(addressId, chainId)
   const key = `${addressId}_${chainId}`
   if (addressChainPagination[key].currentPage < getAddressChainTotalPages(addressId, chainId)) {
@@ -1130,185 +1541,23 @@ const goToAddressChainNextPage = (addressId, chainId) => {
   }
 }
 
-const goToAddressChainLastPage = (addressId, chainId) => {
+const goToAddressChainLastPage = (addressId: number, chainId: string) => {
   initAddressChainPagination(addressId, chainId)
   const key = `${addressId}_${chainId}`
   addressChainPagination[key].currentPage = getAddressChainTotalPages(addressId, chainId)
 }
 
-const onAddressChainPageSizeChange = (addressId, chainId) => {
+const onAddressChainPageSizeChange = (addressId: number, chainId: string) => {
   initAddressChainPagination(addressId, chainId)
   const key = `${addressId}_${chainId}`
   addressChainPagination[key].currentPage = 1
 }
 
-// 链分组函数
-const getChainGroups = () => {
-  const chainMap = new Map()
-
-  // 从所有地址收集所有代币
-  addresses.value.forEach((address) => {
-    if (address.tokens && address.tokens.length > 0) {
-      address.tokens.forEach((token) => {
-        if (!chainMap.has(token.chain_id)) {
-          // 从可用链中查找链信息
-          const chainInfo = availableChains.value.find((c) => c.id === token.chain_id)
-          chainMap.set(token.chain_id, {
-            chainId: token.chain_id,
-            name: chainInfo?.name || token.chain_id,
-            logoUrl: chainInfo?.logo_url || '',
-            tokens: [],
-            totalValue: 0
-          })
-        }
-        chainMap.get(token.chain_id).tokens.push(token)
-      })
-    }
-  })
-
-  // 计算每条链的总价值并按价值对代币进行排序
-  const chains = Array.from(chainMap.values()).map((chain) => {
-    // 按选定货币的价值对代币进行排序（降序）
-    const sortedTokens = [...chain.tokens].sort((a, b) => {
-      const usdValueA = a.usd_value || 0
-      const usdValueB = b.usd_value || 0
-      const rate = exchangeRates.value[selectedCurrency.value] || 1
-      const valueA = rate === 0 ? usdValueA : usdValueA / rate
-      const valueB = rate === 0 ? usdValueB : usdValueB / rate
-      return valueB - valueA
-    })
-
-    chain.tokens = sortedTokens
-    chain.totalValue = chain.tokens.reduce((sum, token) => sum + (token.usd_value || 0), 0)
-    return chain
-  })
-
-  // 按总价值对链进行排序（降序）
-  return chains.sort((a, b) => b.totalValue - a.totalValue)
-}
-
-const toggleChain = (chainId) => {
-  expandedChains[chainId] = !expandedChains[chainId]
-
-  // 如果不存在，初始化此链的分页
-  if (!chainPagination[chainId]) {
-    chainPagination[chainId] = {
-      currentPage: 1,
-      pageSize: 10
-    }
-  }
-}
-
-const refreshChain = async (chainId) => {
-  // 刷新该链上拥有代币的所有地址
-  const addressesToRefresh = addresses.value.filter(
-    (addr) => addr.tokens && addr.tokens.some((token) => token.chain_id === chainId)
-  )
-
-  for (const address of addressesToRefresh) {
-    await refreshAddress(address.id)
-  }
-}
-
-// 链分页函数
-const initChainPagination = (chainId) => {
-  if (!chainPagination[chainId]) {
-    chainPagination[chainId] = {
-      currentPage: 1,
-      pageSize: 10
-    }
-  }
-}
-
-const getPaginatedChainTokens = (chainId) => {
-  const chains = getChainGroups()
-  const chain = chains.find((c) => c.chainId === chainId)
-  if (!chain || !chain.tokens) return []
-
-  initChainPagination(chainId)
-  const pagination = chainPagination[chainId]
-  const start = (pagination.currentPage - 1) * pagination.pageSize
-  const end = start + pagination.pageSize
-
-  return chain.tokens.slice(start, end)
-}
-
-const getChainTotalPages = (chainId) => {
-  const chains = getChainGroups()
-  const chain = chains.find((c) => c.chainId === chainId)
-  if (!chain || !chain.tokens) return 1
-
-  initChainPagination(chainId)
-  const pagination = chainPagination[chainId]
-  return Math.ceil(chain.tokens.length / pagination.pageSize)
-}
-
-const getChainStartIndex = (chainId) => {
-  const chains = getChainGroups()
-  const chain = chains.find((c) => c.chainId === chainId)
-  if (!chain || !chain.tokens || chain.tokens.length === 0) return 0
-
-  initChainPagination(chainId)
-  const pagination = chainPagination[chainId]
-  return (pagination.currentPage - 1) * pagination.pageSize + 1
-}
-
-const getChainEndIndex = (chainId) => {
-  const chains = getChainGroups()
-  const chain = chains.find((c) => c.chainId === chainId)
-  if (!chain || !chain.tokens) return 0
-
-  initChainPagination(chainId)
-  const pagination = chainPagination[chainId]
-  const end = pagination.currentPage * pagination.pageSize
-  return Math.min(end, chain.tokens.length)
-}
-
-const isChainFirstPage = (chainId) => {
-  initChainPagination(chainId)
-  return chainPagination[chainId].currentPage === 1
-}
-
-const isChainLastPage = (chainId) => {
-  initChainPagination(chainId)
-  return chainPagination[chainId].currentPage >= getChainTotalPages(chainId)
-}
-
-const goToChainFirstPage = (chainId) => {
-  initChainPagination(chainId)
-  chainPagination[chainId].currentPage = 1
-}
-
-const goToChainPreviousPage = (chainId) => {
-  initChainPagination(chainId)
-  if (chainPagination[chainId].currentPage > 1) {
-    chainPagination[chainId].currentPage--
-  }
-}
-
-const goToChainNextPage = (chainId) => {
-  initChainPagination(chainId)
-  if (chainPagination[chainId].currentPage < getChainTotalPages(chainId)) {
-    chainPagination[chainId].currentPage++
-  }
-}
-
-const goToChainLastPage = (chainId) => {
-  initChainPagination(chainId)
-  chainPagination[chainId].currentPage = getChainTotalPages(chainId)
-}
-
-const onChainPageSizeChange = (chainId) => {
-  initChainPagination(chainId)
-  // 页面大小改变时重置到第一页
-  chainPagination[chainId].currentPage = 1
-}
-
-const getAddressesByWallet = (walletId) => {
+const getAddressesByWallet = (walletId: number) => {
   return addresses.value.filter((addr) => addr.wallet_id === walletId)
 }
 
-const getTotalValueByWallet = (walletId) => {
+const getTotalValueByWallet = (walletId: number) => {
   return walletStore.getTotalValueByWallet(walletId)
 }
 
@@ -1316,22 +1565,19 @@ const getTotalValue = () => {
   return walletStore.getTotalValue
 }
 
-const getAddressValue = (address) => {
+const getAddressValue = (address: Address) => {
   return address.tokens?.reduce((sum, token) => sum + (token.usd_value || 0), 0) || 0
 }
 
-// 处理链logo加载错误
-const handleChainImageError = (chainId) => {
-  failedChainImages[chainId] = true
-}
+const getWalletChainCount = (walletId: number) => {
+  const wallet = wallets.value.find((w) => w.id === walletId)
 
-// 获取链的首字母作为占位符
-const getChainInitial = (chain) => {
-  const name = chain.name || chain.id || '?'
-  return name.charAt(0).toUpperCase()
-}
+  // If wallet has enabled_chains, use those
+  if (wallet?.enabled_chains && wallet.enabled_chains.length > 0) {
+    return wallet.enabled_chains.length
+  }
 
-const getWalletChainCount = (walletId) => {
+  // Otherwise fall back to chains with tokens
   const addrs = getAddressesByWallet(walletId)
   const chains = new Set()
   addrs.forEach((addr) => {
@@ -1340,19 +1586,54 @@ const getWalletChainCount = (walletId) => {
   return chains.size
 }
 
-const getWalletAssetCount = (walletId) => {
+const getWalletUniqueChains = (walletId: number) => {
+  const wallet = wallets.value.find((w) => w.id === walletId)
+
+  // If wallet has enabled_chains, use those
+  if (wallet?.enabled_chains && wallet.enabled_chains.length > 0) {
+    return wallet.enabled_chains
+  }
+
+  // Otherwise fall back to chains with tokens
+  const addrs = getAddressesByWallet(walletId)
+  const chains = new Set<string>()
+  addrs.forEach((addr) => {
+    addr.tokens?.forEach((token) => chains.add(token.chain_id))
+  })
+  return Array.from(chains)
+}
+
+const getWalletAssetCount = (walletId: number) => {
   const addrs = getAddressesByWallet(walletId)
   return addrs.reduce((sum, addr) => sum + (addr.tokens?.length || 0), 0)
 }
 
-const getAddressChains = (address) => {
+const getChainLogo = (chainId: string) => {
+  // Always use local logo files
+  const localLogoPath = `/images/chains/${chainId}.png`
+  return localLogoPath
+}
+
+const getChainName = (chainId: string) => {
+  const chain = availableChains.value.find((c) => c.id === chainId)
+  return chain?.name || chainId
+}
+
+const getAddressChains = (address: Address) => {
   const chains = new Set()
   address.tokens?.forEach((token) => chains.add(token.chain_id))
   return Array.from(chains)
 }
 
-const getChainIcon = (chainId) => {
-  const icons = {
+// Generate avatar for wallet using DiceBear API (GitHub identicon style)
+const getWalletAvatar = (name: string, id: number) => {
+  // Use identicon style for GitHub-like geometric pattern avatars
+  const seed = `${name}-${id}`
+  return `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(seed)}&size=32`
+}
+
+const getChainIcon = (chainId: string) => {
+  const icons: Record<string, string> = {
     eth: '⟠',
     bsc: 'B',
     polygon: 'P',
@@ -1362,11 +1643,9 @@ const getChainIcon = (chainId) => {
   return icons[chainId] || '⛓️'
 }
 
-const formatAddress = (address) => {
+const formatAddress = (address: string) => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
-
-// 货币函数现在在useCurrency组合式函数中
 
 const handleAddWallet = async () => {
   try {
@@ -1374,12 +1653,12 @@ const handleAddWallet = async () => {
     showAddWalletModal.value = false
     newWallet.value = { name: '', description: '', tags: [], enabled_chains: [] }
     newWalletTagInput.value = ''
-  } catch (error) {
+  } catch (error: any) {
     alert('Failed to add wallet: ' + error.message)
   }
 }
 
-const editWallet = (wallet) => {
+const editWallet = (wallet: Wallet) => {
   editingWallet.value = {
     id: wallet.id,
     name: wallet.name,
@@ -1402,71 +1681,68 @@ const handleEditWallet = async () => {
     showEditWalletModal.value = false
     editingWallet.value = null
     editWalletTagInput.value = ''
-    // 更新后刷新数据
+
+    // Reload chains to get any newly enabled chains
+    try {
+      const response = await chainsAPI.list()
+      availableChains.value = response.data
+    } catch (error) {
+      console.error('Failed to refresh chains:', error)
+    }
+
     await walletStore.fetchWallets()
     await walletStore.fetchAddresses()
-  } catch (error) {
+  } catch (error: any) {
     alert('Failed to update wallet: ' + error.message)
   }
 }
 
 const handleAddAddress = async () => {
   try {
-    const newAddr = await walletStore.createAddress(newAddress.value)
+    await walletStore.createAddress(newAddress.value)
     showAddAddressModal.value = false
     newAddress.value = { wallet_id: '', address: '', label: '', tags: [], chain_type: 'EVM' }
     newAddressTagInput.value = ''
-
-    // 显示成功消息
     alert('Address added! Syncing data in background...')
-
-    // 刷新地址以获取包含代币的最新数据
-    // 等待后台同步完成
     setTimeout(async () => {
       await walletStore.fetchAddresses()
     }, 2000)
-  } catch (error) {
+  } catch (error: any) {
     alert('Failed to add address: ' + error.message)
   }
 }
 
-const handleImageError = (event, tokenId) => {
-  // 将此图像标记为失败，以便Vue显示后备内容
-  console.log('Image failed to load:', {
-    tokenId,
-    src: event.target.src,
-    alt: event.target.alt
-  })
+const handleImageError = (event: Event, tokenId: number) => {
   failedImages[tokenId] = true
 }
 
-const refreshWallet = async (walletId) => {
+const refreshWallet = async (walletId: number) => {
   try {
     await walletStore.refreshWallet(walletId)
-  } catch (error) {
+  } catch (error: any) {
     alert('Failed to refresh wallet: ' + error.message)
   }
 }
 
-const refreshAddress = async (addressId) => {
+const refreshAddress = async (addressId: number) => {
   try {
     await walletStore.refreshAddress(addressId)
-  } catch (error) {
+  } catch (error: any) {
     alert('Failed to refresh address: ' + error.message)
   }
 }
 
-const deleteWallet = async (walletId) => {
+const deleteWallet = async (walletId: number) => {
   if (confirm('Are you sure you want to delete this wallet?')) {
     try {
       await walletStore.deleteWallet(walletId)
-    } catch (error) {
+    } catch (error: any) {
       alert('Failed to delete wallet: ' + error.message)
     }
   }
 }
 
-const editAddress = (address) => {
+const editAddress = (address: Address) => {
   editingAddress.value = {
     id: address.id,
     address: address.address,
@@ -1488,22 +1764,21 @@ const handleEditAddress = async () => {
     editAddressTagInput.value = ''
     await walletStore.fetchWallets()
     await walletStore.fetchAddresses()
-  } catch (error) {
+  } catch (error: any) {
     alert('Failed to update address: ' + error.message)
   }
 }
 
-const deleteAddress = async (addressId) => {
+const deleteAddress = async (addressId: number) => {
   if (confirm('Are you sure you want to delete this address?')) {
     try {
       await walletStore.deleteAddress(addressId)
-    } catch (error) {
+    } catch (error: any) {
       alert('Failed to delete address: ' + error.message)
     }
   }
 }
 
-// 标签管理函数
 const addNewWalletTag = () => {
   const tag = newWalletTagInput.value.trim()
   if (tag && !newWallet.value.tags.includes(tag)) {
@@ -1512,7 +1787,7 @@ const addNewWalletTag = () => {
   }
 }
 
-const removeNewWalletTag = (index) => {
+const removeNewWalletTag = (index: number) => {
   newWallet.value.tags.splice(index, 1)
 }
 
@@ -1524,7 +1799,7 @@ const addEditWalletTag = () => {
   }
 }
 
-const removeEditWalletTag = (index) => {
+const removeEditWalletTag = (index: number) => {
   editingWallet.value.tags.splice(index, 1)
 }
 
@@ -1536,7 +1811,7 @@ const addNewAddressTag = () => {
   }
 }
 
-const removeNewAddressTag = (index) => {
+const removeNewAddressTag = (index: number) => {
   newAddress.value.tags.splice(index, 1)
 }
 
@@ -1548,848 +1823,7 @@ const addEditAddressTag = () => {
   }
 }
 
-const removeEditAddressTag = (index) => {
+const removeEditAddressTag = (index: number) => {
   editingAddress.value.tags.splice(index, 1)
 }
 </script>
-
-<style scoped>
-.evm-accounts {
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.header {
-  margin-bottom: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header h1 {
-  font-size: 28px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-/* 货币样式已移至CurrencySelector组件 */
-
-.actions-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.actions-left {
-  display: flex;
-  gap: 12px;
-}
-
-/* 视图标签页 */
-.view-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #e5e7eb;
-  padding-bottom: 0;
-}
-
-.tab-button {
-  padding: 12px 24px;
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  font-size: 15px;
-  font-weight: 500;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-  bottom: -2px;
-}
-
-.tab-button:hover {
-  color: #1f2937;
-  background: #f9fafb;
-}
-
-.tab-button.active {
-  color: #4f46e5;
-  border-bottom-color: #4f46e5;
-  font-weight: 600;
-}
-
-.tabs-row {
-  background: #fafbfc;
-}
-
-.tabs-row td {
-  padding: 0 !important;
-}
-
-.chain-group-row {
-  background: #f9fafb;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.chain-group-row:hover {
-  background: #f3f4f6;
-}
-
-.chain-group-header {
-  display: flex;
-  align-items: center;
-  padding: 12px 20px;
-  gap: 12px;
-}
-
-.chain-logo-small {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.chain-logo-placeholder-tiny {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.chain-assets {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.chain-value {
-  font-weight: 600;
-  color: #1f2937;
-  min-width: 150px;
-  text-align: right;
-}
-
-.token-logo-wrapper-small {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-}
-
-.asset-token-logo-small {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid #e5e7eb;
-  background: white;
-}
-
-.asset-token-fallback-small {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 700;
-  color: #4f46e5;
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-  border: 1px solid #e5e7eb;
-  text-transform: uppercase;
-}
-
-.asset-count-small {
-  padding: 2px 6px;
-  background: #e5e7eb;
-  color: #6b7280;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.chain-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-right: 12px;
-}
-
-.chain-logo-placeholder-small {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  margin-right: 12px;
-  flex-shrink: 0;
-}
-
-.btn-primary,
-.btn-secondary {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: #4f46e5;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #4338ca;
-}
-
-.btn-secondary {
-  background: white;
-  color: #4f46e5;
-  border: 1px solid #4f46e5;
-}
-
-.btn-secondary:hover {
-  background: #eef2ff;
-}
-
-.table-container {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.accounts-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.accounts-table thead {
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.accounts-table th {
-  padding: 12px 16px;
-  text-align: left;
-  font-size: 13px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.accounts-table td {
-  padding: 16px;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.wallet-row {
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.wallet-row:hover {
-  background: #f9fafb;
-}
-
-.address-header-row {
-  background: #f3f4f6;
-  border-top: 2px solid #e5e7eb;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.address-header-cell {
-  padding: 10px 16px;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  background: #f3f4f6;
-}
-
-.address-row {
-  background: #fafbfc;
-  cursor: pointer;
-}
-
-.address-row:hover {
-  background: #f3f4f6;
-}
-
-/* 代币详情样式已移至TokenDetailRow组件 */
-
-.token-header-row {
-  background: #f3f4f6;
-  border-top: 1px solid #e5e7eb;
-}
-
-.token-header {
-  display: grid;
-  grid-template-columns: 50px 1fr 150px 150px 150px 150px;
-  gap: 16px;
-  align-items: center;
-  background: #f3f4f6;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 12px 16px;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.token-header .token-price,
-.token-header .token-balance,
-.token-header .token-value {
-  text-align: right;
-}
-
-.total-row {
-  background: #f9fafb;
-  font-weight: 600;
-}
-
-.account-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.address-cell {
-  padding-left: 24px;
-}
-
-.expand-icon {
-  font-size: 10px;
-  color: #9ca3af;
-}
-
-.account-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.account-avatar.small {
-  width: 28px;
-  height: 28px;
-  font-size: 12px;
-}
-
-.account-name {
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.address-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.address-label {
-  font-weight: 500;
-  color: #1f2937;
-  font-size: 14px;
-}
-
-.address-hash {
-  font-size: 12px;
-  color: #6b7280;
-  font-family: monospace;
-}
-
-.chains {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.chain-badge {
-  padding: 4px 8px;
-  background: #e0e7ff;
-  color: #4f46e5;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.chain-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #e0e7ff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-}
-
-.tags {
-  display: flex;
-  gap: 6px;
-}
-
-.tag {
-  padding: 4px 12px;
-  background: #fce7f3;
-  color: #be185d;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.tag-small {
-  padding: 2px 8px;
-  background: #e0e7ff;
-  color: #4f46e5;
-  border-radius: 10px;
-  font-size: 11px;
-}
-
-.tags-input {
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 8px;
-  background: white;
-}
-
-.tags-display {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
-  min-height: 24px;
-}
-
-.tag-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: #e0e7ff;
-  color: #4f46e5;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.tag-remove {
-  background: none;
-  border: none;
-  color: #4f46e5;
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-  padding: 0;
-  margin: 0;
-  font-weight: 600;
-}
-
-.tag-remove:hover {
-  color: #3730a3;
-}
-
-.tag-add-section {
-  display: flex;
-  gap: 8px;
-}
-
-.tag-add-section input {
-  flex: 1;
-  padding: 6px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 13px;
-}
-
-.tag-add-section input:focus {
-  outline: none;
-  border-color: #4f46e5;
-}
-
-.btn-add-tag {
-  padding: 6px 16px;
-  background: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.btn-add-tag:hover {
-  background: #4338ca;
-}
-
-.assets {
-  display: flex;
-  align-items: center;
-}
-
-.asset-icons {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.token-logo-wrapper {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-}
-
-.asset-token-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid #e5e7eb;
-  background: white;
-}
-
-.asset-token-fallback {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  color: #4f46e5;
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-  border: 1px solid #e5e7eb;
-  text-transform: uppercase;
-}
-
-.asset-icon,
-.token-symbol {
-  padding: 4px 8px;
-  background: #dbeafe;
-  color: #1e40af;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.asset-count {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.eth-value {
-  font-weight: 500;
-  color: #1f2937;
-  font-family: monospace;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-}
-
-.icon-btn {
-  padding: 6px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.2s;
-  font-size: 16px;
-}
-
-.icon-btn:hover {
-  background: #f3f4f6;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: white;
-  border-radius: 12px;
-  padding: 32px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.modal h2 {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 24px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  outline: none;
-  font-family: inherit;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  border-color: #4f46e5;
-}
-
-.form-group textarea {
-  min-height: 80px;
-  resize: vertical;
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-}
-
-.no-tokens-row {
-  background-color: #f9fafb;
-}
-
-.no-tokens-message {
-  padding: 20px;
-  text-align: center;
-  color: #6b7280;
-  font-size: 14px;
-  font-style: italic;
-}
-
-.chains-selection {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  padding: 12px 0;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.chain-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background-color: #fff;
-  height: 56px;
-}
-
-.chain-item:hover {
-  background-color: #f9fafb;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-}
-
-.chain-item:has(input:checked) {
-  background-color: #eff6ff;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.chain-logo-inline {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  margin-right: 12px;
-}
-
-.chain-logo-placeholder {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  flex-shrink: 0;
-  margin-right: 12px;
-}
-
-.chain-name {
-  font-size: 15px;
-  font-weight: 500;
-  color: #1f2937;
-  flex: 1;
-  min-width: 0;
-  padding: 0 8px;
-}
-
-.chain-checkbox {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  flex-shrink: 0;
-  accent-color: #3b82f6;
-  margin-right: 8px;
-}
-
-/* 分页样式 */
-.pagination-row {
-  background: #fafafa;
-  border-top: 1px solid #e5e7eb;
-}
-
-.pagination-row td {
-  padding: 12px 20px;
-}
-
-.pagination-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-
-.pagination-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.pagination-label {
-  font-weight: 500;
-  color: #4b5563;
-}
-
-.page-size-select {
-  padding: 4px 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  background: white;
-  cursor: pointer;
-  color: #1f2937;
-}
-
-.page-size-select:focus {
-  outline: none;
-  border-color: #6366f1;
-}
-
-.pagination-range {
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.pagination-page {
-  font-weight: 600;
-  color: #4f46e5;
-  padding: 4px 12px;
-  background: #eef2ff;
-  border-radius: 6px;
-}
-
-.pagination-buttons {
-  display: flex;
-  gap: 4px;
-}
-
-.pagination-btn {
-  padding: 6px 12px;
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-  color: #6b7280;
-  transition: all 0.2s;
-  min-width: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: #f3f4f6;
-  border-color: #9ca3af;
-  color: #1f2937;
-}
-
-.pagination-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.pagination-btn:active:not(:disabled) {
-  background: #e5e7eb;
-}
-</style>

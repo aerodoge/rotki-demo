@@ -1,138 +1,50 @@
 <template>
-  <div class="currency-selector">
-    <button class="currency-btn" @click="showMenu = !showMenu">
-      <span class="currency-symbol">{{ currencySymbols[selectedCurrency] }}</span>
-      <span class="currency-name">{{ selectedCurrency }}</span>
-      <span class="dropdown-icon">▼</span>
-    </button>
-    <div v-if="showMenu" class="currency-menu">
-      <div
+  <DropdownMenu v-model:open="showMenu">
+    <DropdownMenuTrigger as-child>
+      <Button variant="outline" class="gap-2">
+        <span class="text-lg font-semibold text-primary">{{
+          currencySymbols[selectedCurrency]
+        }}</span>
+        <span class="font-medium">{{ selectedCurrency }}</span>
+        <span class="text-xs text-muted-foreground">▼</span>
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end" class="w-72">
+      <DropdownMenuItem
         v-for="currency in currencies"
         :key="currency"
-        class="currency-option"
-        :class="{ active: selectedCurrency === currency }"
+        class="flex items-center gap-4 py-4 cursor-pointer"
+        :class="{ 'bg-primary/5 border-l-2 border-l-primary': selectedCurrency === currency }"
         @click="handleSelect(currency)"
       >
-        <span class="currency-symbol-large">{{ currencySymbols[currency] }}</span>
-        <div class="currency-info">
-          <div class="currency-code">{{ currency }}</div>
-          <div class="currency-description">Select as the main currency</div>
+        <span class="text-3xl font-bold text-primary w-10 text-center">{{
+          currencySymbols[currency]
+        }}</span>
+        <div class="flex-1">
+          <div class="text-sm font-semibold">{{ currency }}</div>
+          <div class="text-xs text-muted-foreground">Select as the main currency</div>
         </div>
-      </div>
-    </div>
-  </div>
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useCurrency } from '../composables/useCurrency'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 
 const { currencies, currencySymbols, selectedCurrency, selectCurrency } = useCurrency()
 const showMenu = ref(false)
 
-const handleSelect = (currency) => {
+const handleSelect = (currency: string) => {
   selectCurrency(currency)
   showMenu.value = false
 }
 </script>
-
-<style scoped>
-.currency-selector {
-  position: relative;
-}
-
-.currency-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.currency-btn:hover {
-  border-color: #4f46e5;
-  background: #f9fafb;
-}
-
-.currency-symbol {
-  font-size: 18px;
-  font-weight: 600;
-  color: #4f46e5;
-}
-
-.currency-name {
-  font-weight: 500;
-  color: #374151;
-}
-
-.dropdown-icon {
-  font-size: 10px;
-  color: #6b7280;
-  transition: transform 0.2s;
-}
-
-.currency-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  min-width: 280px;
-  z-index: 1000;
-  overflow: hidden;
-}
-
-.currency-option {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  cursor: pointer;
-  transition: background 0.2s;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.currency-option:last-child {
-  border-bottom: none;
-}
-
-.currency-option:hover {
-  background: #f9fafb;
-}
-
-.currency-option.active {
-  background: #eff6ff;
-  border-left: 3px solid #4f46e5;
-}
-
-.currency-symbol-large {
-  font-size: 28px;
-  font-weight: 700;
-  color: #4f46e5;
-  width: 40px;
-  text-align: center;
-}
-
-.currency-info {
-  flex: 1;
-}
-
-.currency-code {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 2px;
-}
-
-.currency-description {
-  font-size: 12px;
-  color: #6b7280;
-}
-</style>
