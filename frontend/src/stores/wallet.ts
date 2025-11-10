@@ -72,15 +72,31 @@ export const useWalletStore = defineStore('wallet', {
     getTotalValueByWallet: (state) => (walletId: number): number => {
       const addresses = state.addresses.filter((addr) => addr.wallet_id === walletId)
       return addresses.reduce((sum, addr) => {
-        const tokenValue = addr.tokens?.reduce((s, t) => s + (t.usd_value || 0), 0) || 0
-        return sum + tokenValue
+        // 只计算钱包代币（不属于任何协议的代币）
+        const walletTokenValue = addr.tokens?.reduce((s, t) => {
+          if (!t.protocol_id) {
+            return s + (t.usd_value || 0)
+          }
+          return s
+        }, 0) || 0
+        // 协议净值已经包含了协议代币的价值
+        const protocolValue = addr.protocols?.reduce((s, p) => s + (p.net_usd_value || 0), 0) || 0
+        return sum + walletTokenValue + protocolValue
       }, 0)
     },
 
     getTotalValue: (state): number => {
       return state.addresses.reduce((sum, addr) => {
-        const tokenValue = addr.tokens?.reduce((s, t) => s + (t.usd_value || 0), 0) || 0
-        return sum + tokenValue
+        // 只计算钱包代币（不属于任何协议的代币）
+        const walletTokenValue = addr.tokens?.reduce((s, t) => {
+          if (!t.protocol_id) {
+            return s + (t.usd_value || 0)
+          }
+          return s
+        }, 0) || 0
+        // 协议净值已经包含了协议代币的价值
+        const protocolValue = addr.protocols?.reduce((s, p) => s + (p.net_usd_value || 0), 0) || 0
+        return sum + walletTokenValue + protocolValue
       }, 0)
     }
   },
@@ -105,11 +121,21 @@ export const useWalletStore = defineStore('wallet', {
       this.error = null
       try {
         const response = await addressesAPI.list(walletId || undefined)
-        // 从所有地址过滤垃圾代币
-        this.addresses = response.data.map((address) => ({
+        const fetchedAddresses = response.data.map((address) => ({
           ...address,
           tokens: filterSpamTokens(address.tokens)
         }))
+
+        if (walletId) {
+          // 如果指定了钱包ID，只更新该钱包的地址，保留其他钱包的地址
+          // 先移除该钱包的旧地址
+          const otherAddresses = this.addresses.filter(addr => addr.wallet_id !== walletId)
+          // 合并其他钱包的地址和新获取的地址
+          this.addresses = [...otherAddresses, ...fetchedAddresses]
+        } else {
+          // 如果没有指定钱包ID，替换所有地址
+          this.addresses = fetchedAddresses
+        }
       } catch (error: any) {
         this.error = error.message
         console.error('Failed to fetch addresses:', error)
@@ -145,7 +171,14 @@ export const useWalletStore = defineStore('wallet', {
 
     async createAddress(addressData: CreateAddressRequest): Promise<Address> {
       try {
-        const response = await addressesAPI.create(addressData)
+        // 确保 wallet_id 是数字类型
+        const payload = {
+          ...addressData,
+          wallet_id: typeof addressData.wallet_id === 'string'
+            ? parseInt(addressData.wallet_id, 10)
+            : addressData.wallet_id
+        }
+        const response = await addressesAPI.create(payload)
         this.addresses.push(response.data)
         return response.data
       } catch (error: any) {
@@ -159,10 +192,11 @@ export const useWalletStore = defineStore('wallet', {
         const response = await addressesAPI.update(addressId, addressData)
         const index = this.addresses.findIndex((a) => a.id === addressId)
         if (index !== -1) {
-          this.addresses[index] = {
+          // 使用 splice 确保 Vue 能检测到数组变化
+          this.addresses.splice(index, 1, {
             ...response.data,
             tokens: filterSpamTokens(response.data.tokens)
-          }
+          })
         }
         return response.data
       } catch (error: any) {
@@ -211,10 +245,11 @@ export const useWalletStore = defineStore('wallet', {
         const response = await addressesAPI.refresh(addressId)
         const index = this.addresses.findIndex((a) => a.id === addressId)
         if (index !== -1) {
-          this.addresses[index] = {
+          // 使用 splice 确保 Vue 能检测到数组变化
+          this.addresses.splice(index, 1, {
             ...response.data,
             tokens: filterSpamTokens(response.data.tokens)
-          }
+          })
         }
       } catch (error: any) {
         this.error = error.message

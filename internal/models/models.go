@@ -57,6 +57,7 @@ type Address struct {
 	// 关系
 	Wallet         *Wallet         `gorm:"foreignKey:WalletID" json:"wallet,omitempty"`
 	Tokens         []Token         `gorm:"foreignKey:AddressID" json:"tokens,omitempty"`
+	Protocols      []Protocol      `gorm:"foreignKey:AddressID" json:"protocols,omitempty"`
 	AssetSnapshots []AssetSnapshot `gorm:"foreignKey:AddressID" json:"asset_snapshots,omitempty"`
 }
 
@@ -117,9 +118,11 @@ type Token struct {
 	Name        string    `json:"name"`
 	Decimals    int       `json:"decimals"`
 	LogoURL     string    `json:"logo_url"`
-	Balance     string    `gorm:"type:decimal(40,18)" json:"balance"`
+	Balance     string    `gorm:"type:decimal(40,18)" json:"balance"` // 可以是负数（debt代币）
 	Price       float64   `gorm:"type:decimal(30,6)" json:"price"`
-	USDValue    float64   `gorm:"type:decimal(30,6)" json:"usd_value"`
+	USDValue    float64   `gorm:"type:decimal(30,6)" json:"usd_value"`                  // 可以是负数
+	ProtocolID  string    `gorm:"type:varchar(100);index" json:"protocol_id,omitempty"` // 如果来自协议，记录协议ID
+	IsDebt      bool      `gorm:"default:false" json:"is_debt"`                         // 是否是债务代币
 	LastUpdated time.Time `gorm:"autoUpdateTime" json:"last_updated"`
 
 	// 关系
@@ -160,6 +163,27 @@ type RPCNode struct {
 	Chain *Chain `gorm:"foreignKey:ChainID" json:"chain,omitempty"`
 }
 
+// Protocol 表示 DeFi 协议持仓
+type Protocol struct {
+	ID            uint      `gorm:"primaryKey" json:"id"`
+	AddressID     uint      `gorm:"not null;index;uniqueIndex:uk_address_protocol" json:"address_id"`
+	ProtocolID    string    `gorm:"not null;uniqueIndex:uk_address_protocol" json:"protocol_id"`
+	Name          string    `json:"name"`
+	SiteURL       string    `json:"site_url"`
+	LogoURL       string    `json:"logo_url"`
+	ChainID       string    `gorm:"not null;index" json:"chain_id"`
+	NetUSDValue   float64   `gorm:"type:decimal(30,6)" json:"net_usd_value"`
+	AssetUSDValue float64   `gorm:"type:decimal(30,6)" json:"asset_usd_value"`
+	DebtUSDValue  float64   `gorm:"type:decimal(30,6)" json:"debt_usd_value"`
+	PositionType  string    `json:"position_type"` // lending, staking, liquidity, etc.
+	RawData       JSONMap   `gorm:"type:json" json:"raw_data,omitempty"`
+	LastUpdated   time.Time `gorm:"autoUpdateTime" json:"last_updated"`
+
+	// 关系
+	Address *Address `gorm:"foreignKey:AddressID" json:"address,omitempty"`
+	Chain   *Chain   `gorm:"foreignKey:ChainID" json:"chain,omitempty"`
+}
+
 // TableName 覆盖表名
 func (Wallet) TableName() string        { return "wallets" }
 func (Address) TableName() string       { return "addresses" }
@@ -168,3 +192,4 @@ func (Chain) TableName() string         { return "chains" }
 func (Token) TableName() string         { return "tokens" }
 func (SyncJob) TableName() string       { return "sync_jobs" }
 func (RPCNode) TableName() string       { return "rpc_nodes" }
+func (Protocol) TableName() string      { return "protocols" }

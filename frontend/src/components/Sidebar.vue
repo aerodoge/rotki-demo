@@ -68,48 +68,6 @@
         </div>
       </div>
 
-      <div
-        class="flex items-center px-5 py-3 mx-2 my-0.5 text-sm text-muted-foreground hover:text-foreground hover:bg-gradient-accent rounded-lg transition-all cursor-pointer"
-      >
-        <span class="mr-3">💰</span>
-        <span>Balances</span>
-      </div>
-
-      <div
-        class="flex items-center px-5 py-3 mx-2 my-0.5 text-sm text-muted-foreground hover:text-foreground hover:bg-gradient-accent rounded-lg transition-all cursor-pointer"
-      >
-        <span class="mr-3">📜</span>
-        <span>History</span>
-      </div>
-
-      <div
-        class="flex items-center px-5 py-3 mx-2 my-0.5 text-sm text-muted-foreground hover:text-foreground hover:bg-gradient-accent rounded-lg transition-all cursor-pointer"
-      >
-        <span class="mr-3">⛓️</span>
-        <span>Onchain</span>
-      </div>
-
-      <div
-        class="flex items-center px-5 py-3 mx-2 my-0.5 text-sm text-muted-foreground hover:text-foreground hover:bg-gradient-accent rounded-lg transition-all cursor-pointer"
-      >
-        <span class="mr-3">🏦</span>
-        <span>Staking</span>
-      </div>
-
-      <div
-        class="flex items-center px-5 py-3 mx-2 my-0.5 text-sm text-muted-foreground hover:text-foreground hover:bg-gradient-accent rounded-lg transition-all cursor-pointer"
-      >
-        <span class="mr-3">📊</span>
-        <span>Statistics</span>
-      </div>
-
-      <div
-        class="flex items-center px-5 py-3 mx-2 my-0.5 text-sm text-muted-foreground hover:text-foreground hover:bg-gradient-accent rounded-lg transition-all cursor-pointer"
-      >
-        <span class="mr-3">📈</span>
-        <span>P&L Report</span>
-      </div>
-
       <!-- Settings Section -->
       <div class="my-1">
         <div

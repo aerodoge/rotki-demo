@@ -143,7 +143,7 @@ func (d *DeBankProvider) GetTotalBalance(ctx context.Context, address string) (*
 func (d *DeBankProvider) GetTokenList(ctx context.Context, address string, chainIDs []string) ([]provider.TokenInfo, error) {
 	params := map[string]string{
 		"id":     address,
-		"is_all": "true",
+		"is_all": "false",
 	}
 
 	// 如果请求特定链，使用它们
@@ -266,6 +266,17 @@ func (d *DeBankProvider) GetProtocolList(ctx context.Context, address string, ch
 		return nil, err
 	}
 
+	type debankToken struct {
+		ID       string  `json:"id"`
+		Chain    string  `json:"chain"`
+		Name     string  `json:"name"`
+		Symbol   string  `json:"symbol"`
+		Decimals int     `json:"decimals"`
+		LogoURL  string  `json:"logo_url"`
+		Price    float64 `json:"price"`
+		Amount   float64 `json:"amount"`
+	}
+
 	var protocols []struct {
 		ProtocolID        string  `json:"id"`
 		Name              string  `json:"name"`
@@ -276,13 +287,19 @@ func (d *DeBankProvider) GetProtocolList(ctx context.Context, address string, ch
 		AssetUSDValue     float64 `json:"asset_usd_value"`
 		DebtUSDValue      float64 `json:"debt_usd_value"`
 		PortfolioItemList []struct {
-			Name         string `json:"name"`
-			PositionType string `json:"detail_types"`
+			Name         string   `json:"name"`
+			PositionType []string `json:"detail_types"`
 			Stats        struct {
 				NetUSDValue   float64 `json:"net_usd_value"`
 				AssetUSDValue float64 `json:"asset_usd_value"`
 				DebtUSDValue  float64 `json:"debt_usd_value"`
 			} `json:"stats"`
+			AssetTokenList []debankToken `json:"asset_token_list"`
+			Detail         struct {
+				SupplyTokenList []debankToken `json:"supply_token_list"`
+				BorrowTokenList []debankToken `json:"borrow_token_list"`
+				HealthRate      float64       `json:"health_rate"`
+			} `json:"detail"`
 		} `json:"portfolio_item_list"`
 	}
 
@@ -290,17 +307,73 @@ func (d *DeBankProvider) GetProtocolList(ctx context.Context, address string, ch
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
+	// 辅助函数：转换 DeBank token 到 provider.TokenDetail
+	convertToken := func(t debankToken, chainID string, isDebt bool) provider.TokenDetail {
+		amount := t.Amount
+		if isDebt && amount > 0 {
+			amount = -amount // 确保 debt 是负数
+		}
+		return provider.TokenDetail{
+			TokenID:  t.ID,
+			ChainID:  chainID,
+			Symbol:   t.Symbol,
+			Name:     t.Name,
+			Decimals: t.Decimals,
+			LogoURL:  t.LogoURL,
+			Amount:   amount,
+			Price:    t.Price,
+			USDValue: amount * t.Price,
+			IsDebt:   isDebt,
+		}
+	}
+
 	result := make([]provider.ProtocolInfo, len(protocols))
 	for i, proto := range protocols {
 		portfolioItems := make([]provider.PortfolioItem, len(proto.PortfolioItemList))
 		for j, item := range proto.PortfolioItemList {
-			portfolioItems[j] = provider.PortfolioItem{
-				Name:          item.Name,
-				PositionType:  item.PositionType,
-				NetUSDValue:   item.Stats.NetUSDValue,
-				AssetUSDValue: item.Stats.AssetUSDValue,
-				DebtUSDValue:  item.Stats.DebtUSDValue,
+			// 转换 asset_token_list（包含正负值）
+			assetTokens := make([]provider.TokenDetail, len(item.AssetTokenList))
+			for k, token := range item.AssetTokenList {
+				assetTokens[k] = convertToken(token, proto.Chain, token.Amount < 0)
 			}
+
+			// 转换 supply_token_list
+			supplyTokens := make([]provider.TokenDetail, len(item.Detail.SupplyTokenList))
+			for k, token := range item.Detail.SupplyTokenList {
+				supplyTokens[k] = convertToken(token, proto.Chain, false)
+			}
+
+			// 转换 borrow_token_list (这些应该是负值)
+			borrowTokens := make([]provider.TokenDetail, len(item.Detail.BorrowTokenList))
+			for k, token := range item.Detail.BorrowTokenList {
+				borrowTokens[k] = convertToken(token, proto.Chain, true)
+			}
+
+			// 提取主要的 position type
+			positionType := "unknown"
+			if len(item.PositionType) > 0 {
+				positionType = item.PositionType[0]
+			}
+
+			portfolioItems[j] = provider.PortfolioItem{
+				Name:            item.Name,
+				PositionType:    positionType,
+				NetUSDValue:     item.Stats.NetUSDValue,
+				AssetUSDValue:   item.Stats.AssetUSDValue,
+				DebtUSDValue:    item.Stats.DebtUSDValue,
+				AssetTokenList:  assetTokens,
+				SupplyTokenList: supplyTokens,
+				BorrowTokenList: borrowTokens,
+				HealthRate:      item.Detail.HealthRate,
+			}
+		}
+
+		// 计算所有 portfolio items 的总净值、资产值和债务值
+		var totalNetUSD, totalAssetUSD, totalDebtUSD float64
+		for _, item := range portfolioItems {
+			totalNetUSD += item.NetUSDValue
+			totalAssetUSD += item.AssetUSDValue
+			totalDebtUSD += item.DebtUSDValue
 		}
 
 		result[i] = provider.ProtocolInfo{
@@ -309,9 +382,9 @@ func (d *DeBankProvider) GetProtocolList(ctx context.Context, address string, ch
 			SiteURL:        proto.SiteURL,
 			LogoURL:        proto.LogoURL,
 			ChainID:        proto.Chain,
-			NetUSDValue:    proto.NetUSDValue,
-			AssetUSDValue:  proto.AssetUSDValue,
-			DebtUSDValue:   proto.DebtUSDValue,
+			NetUSDValue:    totalNetUSD,
+			AssetUSDValue:  totalAssetUSD,
+			DebtUSDValue:   totalDebtUSD,
 			PortfolioItems: portfolioItems,
 		}
 	}

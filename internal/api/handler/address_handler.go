@@ -13,21 +13,24 @@ import (
 
 // AddressHandler 处理地址相关的 HTTP 请求
 type AddressHandler struct {
-	addressRepo *repository.AddressRepository
-	tokenRepo   *repository.TokenRepository
-	syncService *service.SyncService
+	addressRepo  *repository.AddressRepository
+	tokenRepo    *repository.TokenRepository
+	protocolRepo *repository.ProtocolRepository
+	syncService  *service.SyncService
 }
 
 // NewAddressHandler 创建一个新的地址处理器
 func NewAddressHandler(
 	addressRepo *repository.AddressRepository,
 	tokenRepo *repository.TokenRepository,
+	protocolRepo *repository.ProtocolRepository,
 	syncService *service.SyncService,
 ) *AddressHandler {
 	return &AddressHandler{
-		addressRepo: addressRepo,
-		tokenRepo:   tokenRepo,
-		syncService: syncService,
+		addressRepo:  addressRepo,
+		tokenRepo:    tokenRepo,
+		protocolRepo: protocolRepo,
+		syncService:  syncService,
 	}
 }
 
@@ -110,6 +113,12 @@ func (h *AddressHandler) GetAddress(c *gin.Context) {
 		address.Tokens = tokens
 	}
 
+	// 获取此地址的协议
+	protocols, err := h.protocolRepo.GetByAddressID(address.ID)
+	if err == nil {
+		address.Protocols = protocols
+	}
+
 	c.JSON(http.StatusOK, address)
 }
 
@@ -138,11 +147,16 @@ func (h *AddressHandler) ListAddresses(c *gin.Context) {
 		return
 	}
 
-	// 补充代币信息
+	// 补充代币和协议信息
 	for i := range addresses {
 		tokens, err := h.tokenRepo.GetByAddressID(addresses[i].ID)
 		if err == nil {
 			addresses[i].Tokens = tokens
+		}
+
+		protocols, err := h.protocolRepo.GetByAddressID(addresses[i].ID)
+		if err == nil {
+			addresses[i].Protocols = protocols
 		}
 	}
 
@@ -178,10 +192,15 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 		return
 	}
 
-	// 获取代币用于响应
+	// 获取代币和协议用于响应
 	tokens, err := h.tokenRepo.GetByAddressID(address.ID)
 	if err == nil {
 		address.Tokens = tokens
+	}
+
+	protocols, err := h.protocolRepo.GetByAddressID(address.ID)
+	if err == nil {
+		address.Protocols = protocols
 	}
 
 	c.JSON(http.StatusOK, address)
@@ -225,10 +244,15 @@ func (h *AddressHandler) RefreshAddress(c *gin.Context) {
 		return
 	}
 
-	// 获取代币
+	// 获取代币和协议
 	tokens, err := h.tokenRepo.GetByAddressID(address.ID)
 	if err == nil {
 		address.Tokens = tokens
+	}
+
+	protocols, err := h.protocolRepo.GetByAddressID(address.ID)
+	if err == nil {
+		address.Protocols = protocols
 	}
 
 	c.JSON(http.StatusOK, address)

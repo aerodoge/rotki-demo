@@ -50,6 +50,16 @@ func (r *TokenRepository) DeleteByAddressID(addressID uint) error {
 	return r.db.Where("address_id = ?", addressID).Delete(&models.Token{}).Error
 }
 
+// DeleteWalletTokensByAddressID 删除地址的钱包代币（不包括协议代币）
+func (r *TokenRepository) DeleteWalletTokensByAddressID(addressID uint) error {
+	return r.db.Where("address_id = ? AND (protocol_id IS NULL OR protocol_id = '')", addressID).Delete(&models.Token{}).Error
+}
+
+// DeleteProtocolTokensByAddressID 删除地址的协议代币
+func (r *TokenRepository) DeleteProtocolTokensByAddressID(addressID uint) error {
+	return r.db.Where("address_id = ? AND protocol_id IS NOT NULL AND protocol_id != ''", addressID).Delete(&models.Token{}).Error
+}
+
 // GetTotalValueByAddressID 计算地址的总 USD 价值
 func (r *TokenRepository) GetTotalValueByAddressID(addressID uint) (float64, error) {
 	var total float64

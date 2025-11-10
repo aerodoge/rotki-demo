@@ -70,6 +70,7 @@ func main() {
 	walletRepo := repository.NewWalletRepository(db)
 	addressRepo := repository.NewAddressRepository(db)
 	tokenRepo := repository.NewTokenRepository(db)
+	protocolRepo := repository.NewProtocolRepository(db)
 	chainRepo := repository.NewChainRepository(db)
 	rpcNodeRepo := repository.NewRPCNodeRepository(db)
 
@@ -88,6 +89,7 @@ func main() {
 		walletRepo,
 		addressRepo,
 		tokenRepo,
+		protocolRepo,
 		chainRepo,
 		cfg.Sync.GetSyncInterval(),
 		cfg.Sync.BatchSize,
@@ -104,7 +106,7 @@ func main() {
 
 	// 初始化处理器
 	walletHandler := handler.NewWalletHandler(walletRepo)
-	addressHandler := handler.NewAddressHandler(addressRepo, tokenRepo, syncService)
+	addressHandler := handler.NewAddressHandler(addressRepo, tokenRepo, protocolRepo, syncService)
 	chainHandler := handler.NewChainHandler(chainRepo)
 	rpcNodeHandler := handler.NewRPCNodeHandler(rpcNodeService, logger.GetLogger())
 

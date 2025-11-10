@@ -25,6 +25,28 @@
         <span class="mr-2">+</span>
         Add Address
       </Button>
+      <Button
+        @click="refreshAllWallets"
+        variant="outline"
+        class="border-primary/20 hover:bg-accent"
+        :disabled="loading"
+      >
+        <svg
+          class="w-4 h-4 mr-2"
+          :class="{ 'animate-spin': loading }"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
+        {{ loading ? '刷新中...' : '刷新全部' }}
+      </Button>
     </div>
 
     <!-- Accounts Card -->
@@ -888,7 +910,18 @@
             </div>
           </div>
           <div class="space-y-2">
-            <Label>Enabled Chains (optional)</Label>
+            <div class="flex items-center justify-between">
+              <Label>Enabled Chains (optional)</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="text-xs h-7"
+                @click="toggleAllNewWalletChains"
+              >
+                {{ isAllNewWalletChainsSelected ? 'Deselect All' : 'Select All' }}
+              </Button>
+            </div>
             <div class="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-1">
               <div
                 v-for="chain in availableChains"
@@ -994,7 +1027,18 @@
             </div>
           </div>
           <div class="space-y-2">
-            <Label>Enabled Chains (optional)</Label>
+            <div class="flex items-center justify-between">
+              <Label>Enabled Chains (optional)</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="text-xs h-7"
+                @click="toggleAllEditWalletChains"
+              >
+                {{ isAllEditWalletChainsSelected ? 'Deselect All' : 'Select All' }}
+              </Button>
+            </div>
             <div class="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-1">
               <div
                 v-for="chain in availableChains"
@@ -1298,7 +1342,7 @@ onMounted(async () => {
     console.error('Failed to fetch chains:', error)
   }
 
-  updateExchangeRates(addresses.value)
+  await updateExchangeRates(addresses.value)
 })
 
 const toggleWallet = (walletId: number) => {
@@ -1571,7 +1615,21 @@ const getTotalValue = () => {
 }
 
 const getAddressValue = (address: Address) => {
-  return address.tokens?.reduce((sum, token) => sum + (token.usd_value || 0), 0) || 0
+  // 只计算钱包代币（不属于任何协议的代币）的价值
+  const walletTokenValue =
+    address.tokens?.reduce((sum, token) => {
+      // 只累加不属于协议的代币
+      if (!token.protocol_id) {
+        return sum + (token.usd_value || 0)
+      }
+      return sum
+    }, 0) || 0
+
+  // 协议净值已经包含了协议代币的价值
+  const protocolValue =
+    address.protocols?.reduce((sum, protocol) => sum + (protocol.net_usd_value || 0), 0) || 0
+
+  return walletTokenValue + protocolValue
 }
 
 const getWalletChainCount = (walletId: number) => {
@@ -1729,6 +1787,33 @@ const refreshWallet = async (walletId: number) => {
   }
 }
 
+const refreshAllWallets = async () => {
+  if (!confirm('确定要刷新所有钱包吗？这可能需要一些时间。')) {
+    return
+  }
+
+  try {
+    const totalWallets = wallets.value.length
+    let completedWallets = 0
+
+    // 串行刷新每个钱包，避免同时发送太多请求
+    for (const wallet of wallets.value) {
+      try {
+        await walletStore.refreshWallet(wallet.id)
+        completedWallets++
+        console.log(`已刷新 ${completedWallets}/${totalWallets} 个钱包`)
+      } catch (error: any) {
+        console.error(`刷新钱包 ${wallet.name} 失败:`, error)
+        // 继续刷新下一个钱包
+      }
+    }
+
+    alert(`刷新完成！成功刷新 ${completedWallets}/${totalWallets} 个钱包`)
+  } catch (error: any) {
+    alert('刷新失败: ' + error.message)
+  }
+}
+
 const refreshAddress = async (addressId: number) => {
   try {
     await walletStore.refreshAddress(addressId)
@@ -1830,5 +1915,42 @@ const addEditAddressTag = () => {
 
 const removeEditAddressTag = (index: number) => {
   editingAddress.value.tags.splice(index, 1)
+}
+
+// Computed properties for Select All functionality
+const isAllNewWalletChainsSelected = computed(() => {
+  return (
+    availableChains.value.length > 0 &&
+    newWallet.value.enabled_chains.length === availableChains.value.length
+  )
+})
+
+const isAllEditWalletChainsSelected = computed(() => {
+  return (
+    availableChains.value.length > 0 &&
+    editingWallet.value &&
+    editingWallet.value.enabled_chains.length === availableChains.value.length
+  )
+})
+
+// Methods to toggle all chains
+const toggleAllNewWalletChains = () => {
+  if (isAllNewWalletChainsSelected.value) {
+    // Deselect all
+    newWallet.value.enabled_chains = []
+  } else {
+    // Select all
+    newWallet.value.enabled_chains = availableChains.value.map((chain) => chain.id)
+  }
+}
+
+const toggleAllEditWalletChains = () => {
+  if (isAllEditWalletChainsSelected.value) {
+    // Deselect all
+    editingWallet.value.enabled_chains = []
+  } else {
+    // Select all
+    editingWallet.value.enabled_chains = availableChains.value.map((chain) => chain.id)
+  }
 }
 </script>

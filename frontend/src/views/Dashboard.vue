@@ -94,22 +94,46 @@ const chainBalances = computed(() => {
   const balanceMap = new Map()
 
   addresses.value.forEach((address) => {
+    // 1. 累加钱包代币（不属于协议的代币）
     if (address.tokens && address.tokens.length > 0) {
       address.tokens.forEach((token) => {
-        const chainId = token.chain_id
-        const chain = token.chain
+        // 只统计钱包代币，协议代币的价值已经包含在协议净值中
+        if (!token.protocol_id) {
+          const chainId = token.chain_id
+          const chain = token.chain
+
+          if (!balanceMap.has(chainId)) {
+            balanceMap.set(chainId, {
+              chain_id: chainId,
+              name: chain?.name || chainId,
+              logo_url: chain?.logo_url,
+              balance: 0
+            })
+          }
+
+          const chainBalance = balanceMap.get(chainId)
+          chainBalance.balance += token.usd_value || 0
+        }
+      })
+    }
+
+    // 2. 累加协议净值
+    if (address.protocols && address.protocols.length > 0) {
+      address.protocols.forEach((protocol) => {
+        const chainId = protocol.chain_id
 
         if (!balanceMap.has(chainId)) {
+          // 如果该链还没有记录，尝试从协议的链信息获取名称和logo
           balanceMap.set(chainId, {
             chain_id: chainId,
-            name: chain?.name || chainId,
-            logo_url: chain?.logo_url,
+            name: chainId, // 可以从 chain_info 表获取，暂时用 chain_id
+            logo_url: undefined,
             balance: 0
           })
         }
 
         const chainBalance = balanceMap.get(chainId)
-        chainBalance.balance += token.usd_value || 0
+        chainBalance.balance += protocol.net_usd_value || 0
       })
     }
   })
@@ -120,14 +144,22 @@ const chainBalances = computed(() => {
 // 以USD计算的总余额
 const getTotalBalance = () => {
   return addresses.value.reduce((total, address) => {
-    if (address.tokens && address.tokens.length > 0) {
-      return total + address.tokens.reduce((sum, token) => sum + (token.usd_value || 0), 0)
-    }
-    return total
+    // 只计算钱包代币（不属于任何协议的代币）
+    const walletTokenValue =
+      address.tokens?.reduce((sum, token) => {
+        if (!token.protocol_id) {
+          return sum + (token.usd_value || 0)
+        }
+        return sum
+      }, 0) || 0
+    // 协议净值已经包含了协议代币的价值
+    const protocolValue =
+      address.protocols?.reduce((sum, protocol) => sum + (protocol.net_usd_value || 0), 0) || 0
+    return total + walletTokenValue + protocolValue
   }, 0)
 }
 
-// 将余额格式化为选定的货币
+// 将余额格式化为选定的货币（带千位分隔符）
 const formatBalance = (usdValue: number, currency: string | null = null): string => {
   const targetCurrency = currency || selectedCurrency.value
   const rate = exchangeRates.value[targetCurrency]
@@ -139,21 +171,21 @@ const formatBalance = (usdValue: number, currency: string | null = null): string
   const value = usdValue / rate
 
   if (targetCurrency === 'BTC') {
-    return value.toFixed(8)
+    return value.toLocaleString('en-US', { minimumFractionDigits: 8, maximumFractionDigits: 8 })
   } else if (targetCurrency === 'ETH') {
-    return value.toFixed(6)
+    return value.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 })
   } else {
-    return value.toFixed(2)
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
 }
 
 const refreshBalances = async () => {
   await walletStore.fetchAddresses()
-  updateExchangeRates(addresses.value)
+  await updateExchangeRates(addresses.value)
 }
 
 onMounted(async () => {
   await walletStore.fetchAddresses()
-  updateExchangeRates(addresses.value)
+  await updateExchangeRates(addresses.value)
 })
 </script>

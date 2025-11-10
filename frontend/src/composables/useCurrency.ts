@@ -27,8 +27,23 @@ const exchangeRates: Ref<ExchangeRates> = ref({
 })
 
 export function useCurrency() {
+  // 从外部 API 获取 BTC 价格
+  const fetchBTCPrice = async (): Promise<number | null> => {
+    try {
+      // 使用 CoinGecko 免费 API
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
+      const data = await response.json()
+      if (data.bitcoin && data.bitcoin.usd) {
+        return data.bitcoin.usd
+      }
+    } catch (error) {
+      console.error('Failed to fetch BTC price from CoinGecko:', error)
+    }
+    return null
+  }
+
   // 从代币价格更新汇率
-  const updateExchangeRates = (addresses: Address[]): void => {
+  const updateExchangeRates = async (addresses: Address[]): Promise<void> => {
     let ethPrice: number | null = null
     let btcPrice: number | null = null
 
@@ -55,7 +70,7 @@ export function useCurrency() {
       }
     })
 
-    // 更新汇率（1 ETH = X USD，所以将USD转换为ETH：除以ethPrice）
+    // 更新 ETH 汇率
     if (ethPrice) {
       exchangeRates.value.ETH = ethPrice
       console.log('ETH price found:', ethPrice)
@@ -64,12 +79,21 @@ export function useCurrency() {
       console.log('ETH price not found, using default:', 3500)
     }
 
+    // 更新 BTC 汇率
     if (btcPrice) {
       exchangeRates.value.BTC = btcPrice
-      console.log('BTC price found:', btcPrice)
+      console.log('BTC price found from tokens:', btcPrice)
     } else {
-      exchangeRates.value.BTC = 95000
-      console.log('BTC price not found, using default:', 95000)
+      // 如果从代币中找不到 BTC 价格，从外部 API 获取
+      console.log('BTC price not found in tokens, fetching from API...')
+      const apiBtcPrice = await fetchBTCPrice()
+      if (apiBtcPrice) {
+        exchangeRates.value.BTC = apiBtcPrice
+        console.log('BTC price fetched from API:', apiBtcPrice)
+      } else {
+        exchangeRates.value.BTC = 95000
+        console.log('BTC price API failed, using default:', 95000)
+      }
     }
 
     console.log('Exchange rates updated:', exchangeRates.value)

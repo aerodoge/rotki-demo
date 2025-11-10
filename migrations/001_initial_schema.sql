@@ -66,15 +66,18 @@ CREATE TABLE tokens (
     name VARCHAR(255),
     decimals INT,
     logo_url VARCHAR(512),
-    balance VARCHAR(255), -- 存储为字符串以处理来自诈骗代币的超大值
+    balance VARCHAR(255), -- 存储为字符串以处理来自诈骗代币的超大值，可以是负数（debt）
     price DECIMAL(30, 6),
-    usd_value DECIMAL(30, 6),
+    usd_value DECIMAL(30, 6), -- 可以是负数（debt代币）
+    protocol_id VARCHAR(100) DEFAULT NULL, -- 如果来自协议，记录协议ID（如 aave3）
+    is_debt TINYINT(1) DEFAULT 0, -- 是否是债务代币
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (address_id) REFERENCES addresses(id) ON DELETE CASCADE,
     FOREIGN KEY (chain_id) REFERENCES chains(id),
     UNIQUE KEY uk_address_chain_token (address_id, chain_id, token_id),
     INDEX idx_address_id (address_id),
-    INDEX idx_chain_id (chain_id)
+    INDEX idx_chain_id (chain_id),
+    INDEX idx_protocol_id (protocol_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- API rate limiting 表：API 速率限制跟踪

@@ -79,20 +79,29 @@ type ProtocolInfo struct {
 
 // PortfolioItem 表示协议中的持仓
 type PortfolioItem struct {
-	Name          string        `json:"name"`
-	PositionType  string        `json:"position_type"` // deposit、borrow、stake 等
-	NetUSDValue   float64       `json:"net_usd_value"`
-	AssetUSDValue float64       `json:"asset_usd_value"`
-	DebtUSDValue  float64       `json:"debt_usd_value"`
-	TokenList     []TokenDetail `json:"token_list"`
+	Name            string        `json:"name"`
+	PositionType    string        `json:"position_type"` // deposit、borrow、stake 等
+	NetUSDValue     float64       `json:"net_usd_value"`
+	AssetUSDValue   float64       `json:"asset_usd_value"`
+	DebtUSDValue    float64       `json:"debt_usd_value"`
+	AssetTokenList  []TokenDetail `json:"asset_token_list"`  // 所有代币（包含负值的debt）
+	SupplyTokenList []TokenDetail `json:"supply_token_list"` // 只包含供应的代币
+	BorrowTokenList []TokenDetail `json:"borrow_token_list"` // 只包含借出的代币
+	HealthRate      float64       `json:"health_rate"`       // 健康因子
 }
 
 // TokenDetail 表示持仓中的详细代币信息
 type TokenDetail struct {
+	TokenID  string  `json:"token_id"`
+	ChainID  string  `json:"chain_id"`
 	Symbol   string  `json:"symbol"`
-	Amount   float64 `json:"amount"`
+	Name     string  `json:"name"`
+	Decimals int     `json:"decimals"`
+	LogoURL  string  `json:"logo_url"`
+	Amount   float64 `json:"amount"` // 可以是负数（debt）
 	Price    float64 `json:"price"`
-	USDValue float64 `json:"usd_value"`
+	USDValue float64 `json:"usd_value"` // amount * price（保留符号）
+	IsDebt   bool    `json:"is_debt"`   // 是否是债务代币
 }
 
 // ProviderFactory 创建数据提供者实例

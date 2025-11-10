@@ -56,7 +56,7 @@
 
         <!-- Balance -->
         <div class="text-right">
-          <div class="text-sm font-medium">{{ parseFloat(token.balance).toFixed(4) }}</div>
+          <div class="text-sm font-medium">{{ formatBalance(token.balance) }}</div>
         </div>
 
         <!-- Value -->
@@ -98,5 +98,29 @@ const getChainIcon = (chainId: string) => {
     optimism: 'O'
   }
   return icons[chainId] || '⛓️'
+}
+
+// 格式化余额（带千位分隔符）
+const formatBalance = (balance: string | number): string => {
+  const numBalance = typeof balance === 'string' ? parseFloat(balance) : balance
+  if (isNaN(numBalance)) return '0.0000'
+
+  // 根据数值大小决定小数位数
+  if (numBalance >= 1000) {
+    return numBalance.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
+  } else if (numBalance >= 1) {
+    return numBalance.toLocaleString('en-US', {
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 4
+    })
+  } else {
+    return numBalance.toLocaleString('en-US', {
+      minimumFractionDigits: 6,
+      maximumFractionDigits: 6
+    })
+  }
 }
 </script>

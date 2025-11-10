@@ -20,6 +20,7 @@ type SyncService struct {
 	walletRepo   *repository.WalletRepository
 	addressRepo  *repository.AddressRepository
 	tokenRepo    *repository.TokenRepository
+	protocolRepo *repository.ProtocolRepository
 	chainRepo    *repository.ChainRepository
 	syncInterval time.Duration
 	batchSize    int
@@ -33,6 +34,7 @@ func NewSyncService(
 	walletRepo *repository.WalletRepository,
 	addressRepo *repository.AddressRepository,
 	tokenRepo *repository.TokenRepository,
+	protocolRepo *repository.ProtocolRepository,
 	chainRepo *repository.ChainRepository,
 	syncInterval time.Duration,
 	batchSize int,
@@ -42,6 +44,7 @@ func NewSyncService(
 		walletRepo:   walletRepo,
 		addressRepo:  addressRepo,
 		tokenRepo:    tokenRepo,
+		protocolRepo: protocolRepo,
 		chainRepo:    chainRepo,
 		syncInterval: syncInterval,
 		batchSize:    batchSize,
@@ -226,9 +229,118 @@ func (s *SyncService) SyncAddress(ctx context.Context, addressID uint) error {
 		})
 	}
 
-	// 更新插入代币
+	// 先删除旧的钱包代币（保留协议代币）
+	if err := s.tokenRepo.DeleteWalletTokensByAddressID(addressID); err != nil {
+		return fmt.Errorf("failed to delete old wallet tokens: %w", err)
+	}
+
+	// 插入新的钱包代币
 	if err := s.tokenRepo.UpsertBatch(dbTokens); err != nil {
 		return fmt.Errorf("failed to upsert tokens: %w", err)
+	}
+
+	// 获取并同步协议持仓
+	protocols, err := s.dataProvider.GetProtocolList(ctx, address.Address, chainIDsToQuery)
+	if err != nil {
+		logger.Warn("Failed to get protocol list (non-fatal)",
+			zap.Uint("address_id", addressID),
+			zap.Error(err),
+		)
+		// 协议获取失败不应该阻止整个同步过程
+	} else {
+		// 转换为数据库模型
+		dbProtocols := make([]models.Protocol, 0, len(protocols))
+		protocolTokens := make([]models.Token, 0) // 收集所有协议代币
+
+		for _, proto := range protocols {
+			// 确定主要的仓位类型
+			positionType := "unknown"
+			if len(proto.PortfolioItems) > 0 {
+				positionType = proto.PortfolioItems[0].PositionType
+			}
+
+			// 计算所有 portfolio items 的总净值、资产值和债务值
+			var totalNetUSD, totalAssetUSD, totalDebtUSD float64
+			for _, item := range proto.PortfolioItems {
+				totalNetUSD += item.NetUSDValue
+				totalAssetUSD += item.AssetUSDValue
+				totalDebtUSD += item.DebtUSDValue
+			}
+
+			// 将原始数据存储为 JSON
+			rawData := make(models.JSONMap)
+			rawData["portfolio_items"] = proto.PortfolioItems
+
+			dbProtocols = append(dbProtocols, models.Protocol{
+				AddressID:     addressID,
+				ProtocolID:    proto.ProtocolID,
+				Name:          proto.Name,
+				SiteURL:       proto.SiteURL,
+				LogoURL:       proto.LogoURL,
+				ChainID:       proto.ChainID,
+				NetUSDValue:   totalNetUSD,
+				AssetUSDValue: totalAssetUSD,
+				DebtUSDValue:  totalDebtUSD,
+				PositionType:  positionType,
+				RawData:       rawData,
+			})
+
+			// 提取协议中的代币并添加到 tokens 表
+			// 使用 AssetTokenList（包含正负值的完整列表）
+			for _, item := range proto.PortfolioItems {
+				for _, tokenDetail := range item.AssetTokenList {
+					// 构造符合 Rotki 风格的名称
+					tokenName := tokenDetail.Name
+					if tokenDetail.IsDebt {
+						// Debt 代币可能需要特殊前缀
+						if !strings.Contains(tokenName, "debt") && !strings.Contains(tokenName, "Debt") {
+							tokenName = "Debt " + tokenName
+						}
+					}
+
+					protocolTokens = append(protocolTokens, models.Token{
+						AddressID:  addressID,
+						ChainID:    tokenDetail.ChainID,
+						TokenID:    tokenDetail.TokenID,
+						Symbol:     tokenDetail.Symbol,
+						Name:       tokenName,
+						Decimals:   tokenDetail.Decimals,
+						LogoURL:    tokenDetail.LogoURL,
+						Balance:    fmt.Sprintf("%.18f", tokenDetail.Amount), // 保留符号
+						Price:      tokenDetail.Price,
+						USDValue:   tokenDetail.USDValue, // 可以是负数
+						ProtocolID: proto.ProtocolID,
+						IsDebt:     tokenDetail.IsDebt,
+					})
+				}
+			}
+		}
+
+		// 更新插入协议
+		if err := s.protocolRepo.UpsertBatch(dbProtocols); err != nil {
+			return fmt.Errorf("failed to upsert protocols: %w", err)
+		}
+
+		// 删除旧的协议代币
+		if err := s.tokenRepo.DeleteProtocolTokensByAddressID(addressID); err != nil {
+			return fmt.Errorf("failed to delete old protocol tokens: %w", err)
+		}
+
+		// 将协议代币插入到 tokens 表中
+		if len(protocolTokens) > 0 {
+			if err := s.tokenRepo.UpsertBatch(protocolTokens); err != nil {
+				return fmt.Errorf("failed to upsert protocol tokens: %w", err)
+			}
+			logger.Debug("Protocol tokens synced",
+				zap.Uint("address_id", addressID),
+				zap.Int("token_count", len(protocolTokens)),
+			)
+		}
+
+		logger.Debug("Protocols synced",
+			zap.Uint("address_id", addressID),
+			zap.Int("protocol_count", len(protocols)),
+		)
 	}
 
 	// 更新最后同步时间戳
@@ -239,6 +351,7 @@ func (s *SyncService) SyncAddress(ctx context.Context, addressID uint) error {
 	logger.Debug("Address synced successfully",
 		zap.Uint("address_id", addressID),
 		zap.Int("token_count", len(tokens)),
+		zap.Int("protocol_count", len(protocols)),
 	)
 
 	return nil
@@ -264,7 +377,7 @@ func (s *SyncService) SyncWallet(ctx context.Context, walletID uint) error {
 	return nil
 }
 
-// filterSpamTokens 根据常见模式过滤掉垃圾/欺诈代币
+// filterSpamTokens 根据常见模式过滤掉垃圾/欺诈代币和协议凭证代币
 func filterSpamTokens(tokens []provider.TokenInfo) []provider.TokenInfo {
 	spamKeywords := []string{
 		"t.me/", "t.ly/", "fli.so/", "wr.do/", "www.",
@@ -272,9 +385,24 @@ func filterSpamTokens(tokens []provider.TokenInfo) []provider.TokenInfo {
 		"reward", "voucher", "distribution",
 	}
 
+	// 协议凭证代币前缀（aToken, cToken 等）
+	// 这些代币会在协议的 asset_token_list 中展开为实际资产，所以要过滤掉
+	protocolTokenPrefixes := []string{
+		"aEth",         // Aave Ethereum (aEthUSDC, aEthWETH, etc.)
+		"aBas",         // Aave Base
+		"aArb",         // Aave Arbitrum
+		"aOpt",         // Aave Optimism
+		"aPol",         // Aave Polygon
+		"aAva",         // Aave Avalanche
+		"cToken",       // Compound
+		"variableDebt", // Aave variable debt tokens
+		"stableDebt",   // Aave stable debt tokens
+	}
+
 	filtered := make([]provider.TokenInfo, 0, len(tokens))
 	for _, token := range tokens {
 		isSpam := false
+		isProtocolToken := false
 
 		// 检查符号或名称是否包含垃圾关键词
 		symbolLower := strings.ToLower(token.Symbol)
@@ -283,6 +411,14 @@ func filterSpamTokens(tokens []provider.TokenInfo) []provider.TokenInfo {
 		for _, keyword := range spamKeywords {
 			if strings.Contains(symbolLower, keyword) || strings.Contains(nameLower, keyword) {
 				isSpam = true
+				break
+			}
+		}
+
+		// 检查是否是协议凭证代币
+		for _, prefix := range protocolTokenPrefixes {
+			if strings.HasPrefix(token.Symbol, prefix) {
+				isProtocolToken = true
 				break
 			}
 		}
@@ -298,7 +434,8 @@ func filterSpamTokens(tokens []provider.TokenInfo) []provider.TokenInfo {
 			}
 		}
 
-		if !isSpam {
+		// 只保留非垃圾且非协议凭证的代币
+		if !isSpam && !isProtocolToken {
 			filtered = append(filtered, token)
 		}
 	}
