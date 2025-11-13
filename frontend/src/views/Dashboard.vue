@@ -44,17 +44,19 @@
             class="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
           >
             <div class="flex items-center gap-3">
-              <img
-                v-if="chain.logo_url"
-                :src="chain.logo_url"
-                :alt="chain.name"
-                class="w-8 h-8 rounded-full"
-              />
-              <div
-                v-else
-                class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
-              >
-                <span class="text-sm font-semibold">{{ chain.name?.substring(0, 1) }}</span>
+              <div class="relative w-8 h-8">
+                <img
+                  :src="getChainLogo(chain.chain_id)"
+                  :alt="chain.name"
+                  class="w-8 h-8 rounded-full"
+                  @error="(e) => handleImageError(e, chain)"
+                />
+                <div
+                  v-if="imageErrors.has(chain.chain_id)"
+                  class="absolute inset-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
+                >
+                  <span class="text-sm font-semibold">{{ chain.name?.substring(0, 1) }}</span>
+                </div>
               </div>
               <div>
                 <div class="font-medium">{{ chain.name || chain.chain_id }}</div>
@@ -76,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useWalletStore } from '@/stores/wallet'
 import { storeToRefs } from 'pinia'
 import { useCurrency } from '@/composables/useCurrency'
@@ -85,6 +87,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 const walletStore = useWalletStore()
 const { addresses, loading } = storeToRefs(walletStore)
+
+// 跟踪图片加载失败的链
+const imageErrors = ref(new Set<string>())
 
 const { currencies, currencySymbols, selectedCurrency, exchangeRates, updateExchangeRates } =
   useCurrency()
@@ -177,6 +182,19 @@ const formatBalance = (usdValue: number, currency: string | null = null): string
   } else {
     return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
+}
+
+// 获取链的 logo，优先使用本地图片
+const getChainLogo = (chainId: string): string => {
+  // 优先使用本地图片
+  return `/images/chains/${chainId}.png`
+}
+
+// 图片加载失败时的处理
+const handleImageError = (event: Event, chain: any) => {
+  imageErrors.value.add(chain.chain_id)
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
 }
 
 const refreshBalances = async () => {

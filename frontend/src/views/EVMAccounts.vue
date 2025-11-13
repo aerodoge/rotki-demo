@@ -2,7 +2,7 @@
   <div class="container mx-auto p-6 space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <h1 class="text-3xl font-bold tracking-tight">EVM Accounts</h1>
+      <h1 class="text-3xl font-bold tracking-tight">EVM</h1>
       <div class="flex items-center gap-3">
         <CurrencySelector />
       </div>
@@ -45,7 +45,7 @@
             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
           />
         </svg>
-        {{ loading ? '刷新中...' : '刷新全部' }}
+        {{ loading ? 'Refreshing...' : 'Refresh All' }}
       </Button>
     </div>
 
