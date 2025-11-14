@@ -410,7 +410,7 @@
                       <td class="px-4 py-3">
                         <div class="flex items-center gap-1">
                           <div
-                            v-for="token in (address.tokens || []).slice(0, 3)"
+                            v-for="token in getAddressWalletTokens(address).slice(0, 3)"
                             :key="token.id"
                             class="w-5 h-5"
                           >
@@ -435,10 +435,10 @@
                             </div>
                           </div>
                           <span
-                            v-if="(address.tokens || []).length > 3"
+                            v-if="getAddressWalletTokens(address).length > 3"
                             class="text-xs text-muted-foreground ml-1"
                           >
-                            +{{ (address.tokens || []).length - 3 }}
+                            +{{ getAddressWalletTokens(address).length - 3 }}
                           </span>
                         </div>
                       </td>
@@ -1885,6 +1885,38 @@ const getWalletUniqueChains = (walletId: number) => {
 const getWalletAssetCount = (walletId: number) => {
   const addrs = getAddressesByWallet(walletId)
   return addrs.reduce((sum, addr) => sum + (addr.tokens?.length || 0), 0)
+}
+
+// Get unique tokens (deduplicated by symbol, with non-zero balance) for display
+const getAddressWalletTokens = (address: Address) => {
+  if (!address.tokens) return []
+
+  // Filter tokens with non-zero balance
+  const nonZeroTokens = address.tokens.filter(token => {
+    const amount = token.amount || 0
+    const usdValue = token.usd_value || 0
+    return amount > 0 || usdValue > 0
+  })
+
+  // Deduplicate by symbol - keep the one with highest USD value
+  const tokenMap = new Map()
+  nonZeroTokens.forEach(token => {
+    const symbol = token.symbol
+    if (!tokenMap.has(symbol)) {
+      tokenMap.set(symbol, token)
+    } else {
+      // Keep the token with higher USD value
+      const existing = tokenMap.get(symbol)
+      if ((token.usd_value || 0) > (existing.usd_value || 0)) {
+        tokenMap.set(symbol, token)
+      }
+    }
+  })
+
+  // Sort by USD value descending
+  return Array.from(tokenMap.values()).sort((a, b) =>
+    (b.usd_value || 0) - (a.usd_value || 0)
+  )
 }
 
 const getChainLogo = (chainId: string) => {

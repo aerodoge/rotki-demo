@@ -47,6 +47,7 @@ func (r *ChainRepository) List() ([]models.Chain, error) {
 		"arb",    // Arbitrum
 		"op",     // Optimism
 		"base",   // Base
+		"linea",  // Linea
 		"uni",    // Unichain
 		"plasma", // Plasma
 		"scrl",   // Scroll
