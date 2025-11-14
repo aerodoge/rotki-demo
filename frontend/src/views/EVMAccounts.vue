@@ -1129,8 +1129,8 @@
             />
           </div>
           <div class="space-y-2">
-            <Label for="address-label">Label (optional)</Label>
-            <Input id="address-label" v-model="newAddress.label" placeholder="Main Address" />
+            <Label for="address-label">Name (optional)</Label>
+            <Input id="address-label" v-model="newAddress.label" placeholder="Address Name" />
           </div>
           <div class="space-y-2">
             <Label>Tags (optional)</Label>
@@ -1203,11 +1203,11 @@
             />
           </div>
           <div class="space-y-2">
-            <Label for="edit-address-label">Label</Label>
+            <Label for="edit-address-label">Name</Label>
             <Input
               id="edit-address-label"
               v-model="editingAddress.label"
-              placeholder="Address Label"
+              placeholder="Address Name"
             />
           </div>
           <div class="space-y-2">
