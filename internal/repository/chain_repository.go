@@ -41,7 +41,24 @@ func (r *ChainRepository) GetByID(chainID string) (*models.Chain, error) {
 
 // List 获取所有链
 func (r *ChainRepository) List() ([]models.Chain, error) {
+	// 只返回我们支持的链
+	supportedChainIDs := []string{
+		"eth",     // Ethereum
+		"arb",     // Arbitrum
+		"op",      // Optimism
+		"base",    // Base
+		"uni",     // Unichain
+		"plasma",  // Plasma
+		"scrl",    // Scroll
+		"plume",   // Plume
+		"matic",   // Polygon
+		"ink",     // Ink
+		"hyper",   // HyperEVM
+		"bsc",     // BSC
+		"bera",    // Berachain
+	}
+
 	var chains []models.Chain
-	err := r.db.Find(&chains).Error
+	err := r.db.Where("id IN ?", supportedChainIDs).Find(&chains).Error
 	return chains, err
 }

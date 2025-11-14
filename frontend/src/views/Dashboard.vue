@@ -2,7 +2,17 @@
   <div class="container mx-auto p-6 space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
+      <div class="flex items-center gap-4">
+        <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <label class="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            v-model="hideSmallBalances"
+            class="w-4 h-4 rounded border-gray-300 cursor-pointer"
+          />
+          <span class="text-muted-foreground">隐藏小额 (&lt;10U)</span>
+        </label>
+      </div>
       <Button @click="refreshBalances" variant="outline" size="sm">
         <span class="mr-2">🔄</span>
         Refresh
@@ -39,7 +49,7 @@
         </div>
         <div v-else class="space-y-3">
           <div
-            v-for="chain in chainBalances"
+            v-for="chain in filteredChainBalances"
             :key="chain.chain_id"
             class="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
           >
@@ -90,6 +100,9 @@ const { addresses, loading } = storeToRefs(walletStore)
 
 // 跟踪图片加载失败的链
 const imageErrors = ref(new Set<string>())
+
+// 隐藏小额资产
+const hideSmallBalances = ref(false)
 
 const { currencies, currencySymbols, selectedCurrency, exchangeRates, updateExchangeRates } =
   useCurrency()
@@ -144,6 +157,14 @@ const chainBalances = computed(() => {
   })
 
   return Array.from(balanceMap.values()).sort((a, b) => b.balance - a.balance)
+})
+
+// 过滤小额资产的链余额
+const filteredChainBalances = computed(() => {
+  if (!hideSmallBalances.value) {
+    return chainBalances.value
+  }
+  return chainBalances.value.filter(chain => chain.balance >= 10)
 })
 
 // 以USD计算的总余额

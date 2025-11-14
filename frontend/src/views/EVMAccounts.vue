@@ -2,14 +2,24 @@
   <div class="container mx-auto p-6 space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <h1 class="text-3xl font-bold tracking-tight">EVM</h1>
+      <div class="flex items-center gap-4">
+        <h1 class="text-3xl font-bold tracking-tight">EVM</h1>
+        <label class="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            v-model="hideSmallBalances"
+            class="w-4 h-4 rounded border-gray-300 cursor-pointer"
+          />
+          <span class="text-muted-foreground">隐藏小额 (&lt;10U)</span>
+        </label>
+      </div>
       <div class="flex items-center gap-3">
         <CurrencySelector />
       </div>
     </div>
 
     <!-- Action Buttons -->
-    <div class="flex gap-3">
+    <div class="flex gap-3 justify-end">
       <Button
         @click="showAddWalletModal = true"
         class="bg-gradient-primary hover:bg-gradient-primary-hover shadow-lg shadow-primary/25"
@@ -89,7 +99,7 @@
               </tr>
             </thead>
             <tbody>
-              <template v-for="wallet in wallets" :key="wallet.id">
+              <template v-for="wallet in filteredWallets" :key="wallet.id">
                 <!-- Wallet Row -->
                 <tr
                   class="border-b hover:bg-accent/50 cursor-pointer transition-all group"
@@ -1302,6 +1312,22 @@ const tokenPagination = reactive<Record<number, { currentPage: number; pageSize:
 const addressChainPagination = reactive<Record<string, { currentPage: number; pageSize: number }>>(
   {}
 )
+
+// 隐藏小额资产
+const hideSmallBalances = ref(false)
+
+// 过滤小额钱包
+const filteredWallets = computed(() => {
+  if (!hideSmallBalances.value) {
+    return wallets.value
+  }
+  return wallets.value.filter(wallet => {
+    // 计算钱包的USD总值
+    const addrs = getAddressesByWallet(wallet.id)
+    const totalUsdValue = addrs.reduce((sum, addr) => sum + getAddressValue(addr), 0)
+    return totalUsdValue >= 10
+  })
+})
 
 const showAddWalletModal = ref(false)
 const showEditWalletModal = ref(false)
