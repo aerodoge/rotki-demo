@@ -106,7 +106,12 @@ export function useCurrency() {
       return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     }
     const convertedValue = value / rate
-    const decimals = selectedCurrency.value === 'USD' ? 2 : 6
+    let decimals = 2
+    if (selectedCurrency.value === 'BTC') {
+      decimals = 4
+    } else if (selectedCurrency.value === 'ETH') {
+      decimals = 2
+    }
     return convertedValue.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
   }
 
@@ -117,7 +122,12 @@ export function useCurrency() {
       return usdPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     }
     const convertedPrice = usdPrice / rate
-    const decimals = selectedCurrency.value === 'USD' ? 2 : 6
+    let decimals = 2
+    if (selectedCurrency.value === 'BTC') {
+      decimals = 4
+    } else if (selectedCurrency.value === 'ETH') {
+      decimals = 2
+    }
     return convertedPrice.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
   }
 
@@ -128,7 +138,12 @@ export function useCurrency() {
       return usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     }
     const convertedValue = usdValue / rate
-    const decimals = selectedCurrency.value === 'USD' ? 2 : 6
+    let decimals = 2
+    if (selectedCurrency.value === 'BTC') {
+      decimals = 4
+    } else if (selectedCurrency.value === 'ETH') {
+      decimals = 2
+    }
     return convertedValue.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
   }
 

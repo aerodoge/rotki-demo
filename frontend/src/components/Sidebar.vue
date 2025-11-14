@@ -5,11 +5,6 @@
       <h2 class="text-2xl font-bold text-foreground">rotki</h2>
     </div>
 
-    <!-- Search -->
-    <div class="p-4 border-b">
-      <Input type="text" placeholder="Search..." class="w-full" />
-    </div>
-
     <!-- Navigation -->
     <nav class="flex-1 overflow-y-auto py-2">
       <router-link
@@ -28,7 +23,6 @@
           @click="toggleAccounts"
         >
           <div class="flex items-center">
-            <span class="mr-3">👤</span>
             <span>Accounts</span>
           </div>
           <span
@@ -45,25 +39,19 @@
             active-class="bg-gradient-primary text-white font-medium shadow-sm"
           >
             <span class="mr-3">⟠</span>
-            <span>EVM Accounts</span>
+            <span>EVM Wallet</span>
           </router-link>
           <div
             class="flex items-center px-5 py-2.5 mx-2 text-sm text-muted-foreground/50 cursor-not-allowed rounded-lg"
           >
             <span class="mr-3">₿</span>
-            <span>Bitcoin Accounts</span>
+            <span>Bitcoin Wallet</span>
           </div>
           <div
             class="flex items-center px-5 py-2.5 mx-2 text-sm text-muted-foreground/50 cursor-not-allowed rounded-lg"
           >
             <span class="mr-3">◎</span>
-            <span>Solana Accounts</span>
-          </div>
-          <div
-            class="flex items-center px-5 py-2.5 mx-2 text-sm text-muted-foreground/50 cursor-not-allowed rounded-lg"
-          >
-            <span class="mr-3">●</span>
-            <span>Substrate Accounts</span>
+            <span>Solana Wallet</span>
           </div>
         </div>
       </div>
@@ -108,7 +96,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Input } from '@/components/ui/input'
 
 const accountsExpanded = ref(true)
 const settingsExpanded = ref(false)

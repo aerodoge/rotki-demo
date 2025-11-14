@@ -176,9 +176,9 @@ const formatBalance = (usdValue: number, currency: string | null = null): string
   const value = usdValue / rate
 
   if (targetCurrency === 'BTC') {
-    return value.toLocaleString('en-US', { minimumFractionDigits: 8, maximumFractionDigits: 8 })
+    return value.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
   } else if (targetCurrency === 'ETH') {
-    return value.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 })
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   } else {
     return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
