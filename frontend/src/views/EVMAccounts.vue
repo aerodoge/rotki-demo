@@ -1,21 +1,21 @@
 <template>
-  <div class="container mx-auto p-6 space-y-6">
+  <div class="container mx-auto p-4 space-y-3">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <h1 class="text-3xl font-bold tracking-tight">EVM</h1>
-        <label class="flex items-center gap-2 text-sm cursor-pointer">
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-semibold">EVM</h1>
+        <label class="flex items-center gap-1.5 text-xs cursor-pointer">
           <input
             type="checkbox"
             v-model="hideSmallBalances"
-            class="w-4 h-4 rounded border-gray-300 cursor-pointer"
+            class="w-3.5 h-3.5 rounded border-gray-300 cursor-pointer"
           />
           <span class="text-muted-foreground">Hide (&lt;$10)</span>
         </label>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
         <Select v-model="sortBy">
-          <SelectTrigger class="w-[150px]">
+          <SelectTrigger class="w-[140px] h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -24,7 +24,7 @@
           </SelectContent>
         </Select>
         <Select v-model="statusFilter">
-          <SelectTrigger class="w-[150px]">
+          <SelectTrigger class="w-[130px] h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -38,30 +38,18 @@
     </div>
 
     <!-- Action Buttons -->
-    <div class="flex gap-3 justify-end">
-      <Button
-        @click="showAddWalletModal = true"
-        class="bg-gradient-primary hover:bg-gradient-primary-hover shadow-lg shadow-primary/25"
-      >
-        <span class="mr-2">+</span>
+    <div class="flex gap-2 justify-end">
+      <Button @click="showAddWalletModal = true" size="sm">
+        <span class="mr-1.5">+</span>
         Add Wallet
       </Button>
-      <Button
-        @click="showAddAddressModal = true"
-        variant="outline"
-        class="border-primary/20 hover:bg-gradient-accent hover:border-primary/40"
-      >
-        <span class="mr-2">+</span>
+      <Button @click="showAddAddressModal = true" variant="outline" size="sm">
+        <span class="mr-1.5">+</span>
         Add Address
       </Button>
-      <Button
-        @click="refreshAllWallets"
-        variant="outline"
-        class="border-primary/20 hover:bg-accent"
-        :disabled="loading"
-      >
+      <Button @click="refreshAllWallets" variant="outline" size="sm" :disabled="loading">
         <svg
-          class="w-4 h-4 mr-2"
+          class="w-3.5 h-3.5 mr-1.5"
           :class="{ 'animate-spin': loading }"
           fill="none"
           stroke="currentColor"
@@ -85,33 +73,23 @@
           <table class="w-full">
             <thead class="border-b bg-muted/50">
               <tr>
-                <th
-                  class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                >
+                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
                   WALLET
                 </th>
-                <th
-                  class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                >
+                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
                   Chains
                 </th>
-                <th
-                  class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                >
+                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
                   Tags
                 </th>
-                <th
-                  class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                >
+                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
                   Assets
                 </th>
-                <th
-                  class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                >
+                <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
                   {{ selectedCurrency }} value
                 </th>
                 <th
-                  class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                  class="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase"
                 >
                   Actions
                 </th>
@@ -124,10 +102,10 @@
                   class="border-b hover:bg-accent/50 cursor-pointer transition-all group"
                   @click="toggleWallet(wallet.id)"
                 >
-                  <td class="px-4 py-4">
-                    <div class="flex items-center gap-3">
+                  <td class="px-3 py-2.5">
+                    <div class="flex items-center gap-2">
                       <span
-                        class="text-xs text-muted-foreground transform transition-transform group-hover:scale-110"
+                        class="text-xs text-muted-foreground transform transition-transform"
                         :class="{ 'rotate-90': expandedWallets[wallet.id] }"
                       >
                         ▶
@@ -135,14 +113,12 @@
                       <img
                         :src="getWalletAvatar(wallet.name, wallet.id)"
                         :alt="wallet.name"
-                        class="w-8 h-8 rounded-lg shadow-sm group-hover:shadow-md transition-all"
+                        class="w-7 h-7 rounded-lg"
                       />
-                      <span class="font-semibold group-hover:text-primary transition-colors">{{
-                        wallet.name
-                      }}</span>
+                      <span class="font-medium text-sm">{{ wallet.name }}</span>
                     </div>
                   </td>
-                  <td class="px-4 py-4">
+                  <td class="px-3 py-2.5">
                     <div class="flex items-center gap-1">
                       <template
                         v-for="(chainId, index) in getWalletUniqueChains(wallet.id).slice(0, 3)"
@@ -153,7 +129,7 @@
                           :src="getChainLogo(chainId)"
                           :alt="chainId"
                           :title="getChainName(chainId)"
-                          class="w-6 h-6 rounded-full object-cover border border-border"
+                          class="w-5 h-5 rounded-full object-cover border border-border"
                           @error="
                             () => {
                               console.log(
@@ -167,7 +143,7 @@
                         />
                         <div
                           v-else
-                          class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-[10px] font-semibold border border-purple-400"
+                          class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-[10px] font-semibold border border-purple-400"
                           :title="getChainName(chainId)"
                         >
                           {{ getChainName(chainId).charAt(0).toUpperCase() }}
@@ -175,14 +151,14 @@
                       </template>
                       <div
                         v-if="getWalletChainCount(wallet.id) > 3"
-                        class="w-6 h-6 rounded-full bg-muted hover:bg-accent flex items-center justify-center text-[10px] font-semibold text-muted-foreground border border-border cursor-pointer transition-colors"
+                        class="w-5 h-5 rounded-full bg-muted hover:bg-accent flex items-center justify-center text-[10px] font-semibold text-muted-foreground border border-border cursor-pointer transition-colors"
                         :title="`${getWalletChainCount(wallet.id) - 3} more chains`"
                       >
                         +{{ getWalletChainCount(wallet.id) - 3 }}
                       </div>
                     </div>
                   </td>
-                  <td class="px-4 py-4">
+                  <td class="px-3 py-2.5">
                     <div class="flex gap-2 flex-wrap">
                       <Badge
                         v-for="tag in wallet.tags || []"
@@ -194,25 +170,25 @@
                       </Badge>
                     </div>
                   </td>
-                  <td class="px-4 py-4">
+                  <td class="px-3 py-2.5">
                     <div class="flex items-center gap-2">
                       <span class="text-sm text-muted-foreground"
                         >{{ getWalletAssetCount(wallet.id) }} assets</span
                       >
                     </div>
                   </td>
-                  <td class="px-4 py-4">
+                  <td class="px-3 py-2.5">
                     <div class="font-mono font-semibold text-primary">
                       {{ currencySymbols[selectedCurrency]
                       }}{{ formatValue(getTotalValueByWallet(wallet.id)) }}
                     </div>
                   </td>
-                  <td class="px-4 py-4">
+                  <td class="px-3 py-2.5">
                     <div class="flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
-                        class="h-8 w-8"
+                        class="h-7 w-7"
                         @click.stop="refreshWallet(wallet.id)"
                         title="Refresh"
                       >
@@ -233,7 +209,7 @@
                       <Button
                         variant="ghost"
                         size="icon"
-                        class="h-8 w-8"
+                        class="h-7 w-7"
                         @click.stop="editWallet(wallet)"
                         title="Edit"
                       >
@@ -254,7 +230,7 @@
                       <Button
                         variant="ghost"
                         size="icon"
-                        class="h-8 w-8 hover:text-destructive"
+                        class="h-7 w-7 hover:text-destructive"
                         @click.stop="deleteWallet(wallet.id)"
                         title="Delete"
                       >
@@ -332,7 +308,7 @@
                             ▶
                           </span>
                           <div
-                            class="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 group-hover:ring-primary/40 transition-all"
+                            class="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 group-hover:ring-primary/40 transition-all"
                           >
                             <span class="text-xs text-primary font-semibold">
                               {{ address.label?.[0]?.toUpperCase() || 'A' }}
@@ -397,7 +373,7 @@
                           <div
                             v-for="token in (address.tokens || []).slice(0, 3)"
                             :key="token.id"
-                            class="w-6 h-6"
+                            class="w-5 h-5"
                           >
                             <img
                               v-if="
@@ -408,12 +384,12 @@
                               :src="token.logo_url"
                               :alt="token.symbol"
                               :title="token.symbol"
-                              class="w-6 h-6 rounded-full border object-cover"
+                              class="w-5 h-5 rounded-full border object-cover"
                               @error="handleImageError($event, token.id)"
                             />
                             <div
                               v-else
-                              class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
+                              class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
                               :title="token.symbol"
                             >
                               {{ token.symbol.substring(0, 2) }}
@@ -438,7 +414,7 @@
                           <Button
                             variant="ghost"
                             size="icon"
-                            class="h-8 w-8"
+                            class="h-7 w-7"
                             @click.stop="refreshAddress(address.id)"
                             title="Refresh"
                           >
@@ -459,7 +435,7 @@
                           <Button
                             variant="ghost"
                             size="icon"
-                            class="h-8 w-8"
+                            class="h-7 w-7"
                             @click.stop="editAddress(address)"
                             title="Edit"
                           >
@@ -482,7 +458,29 @@
                           <Button
                             variant="ghost"
                             size="icon"
-                            class="h-8 w-8 hover:text-destructive"
+                            class="h-7 w-7"
+                            @click.stop="openDeBank(address.address)"
+                            title="View on DeBank"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              class="h-4 w-4"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            >
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                              <polyline points="15 3 21 3 21 9" />
+                              <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            class="h-7 w-7 hover:text-destructive"
                             @click.stop="deleteAddress(address.id)"
                             title="Delete"
                           >
@@ -614,7 +612,7 @@
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  class="h-8 w-8"
+                                  class="h-7 w-7"
                                   @click="goToFirstPage(address.id)"
                                   :disabled="isFirstPage(address.id)"
                                   title="First page"
@@ -624,7 +622,7 @@
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  class="h-8 w-8"
+                                  class="h-7 w-7"
                                   @click="goToPreviousPage(address.id)"
                                   :disabled="isFirstPage(address.id)"
                                   title="Previous page"
@@ -634,7 +632,7 @@
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  class="h-8 w-8"
+                                  class="h-7 w-7"
                                   @click="goToNextPage(address.id)"
                                   :disabled="isLastPage(address.id)"
                                   title="Next page"
@@ -644,7 +642,7 @@
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  class="h-8 w-8"
+                                  class="h-7 w-7"
                                   @click="goToLastPage(address.id)"
                                   :disabled="isLastPage(address.id)"
                                   title="Last page"
@@ -700,7 +698,7 @@
                                 <div
                                   v-for="token in chain.tokens.slice(0, 2)"
                                   :key="token.id"
-                                  class="w-6 h-6"
+                                  class="w-5 h-5"
                                 >
                                   <img
                                     v-if="
@@ -711,12 +709,12 @@
                                     :src="token.logo_url"
                                     :alt="token.symbol"
                                     :title="token.symbol"
-                                    class="w-6 h-6 rounded-full border object-cover"
+                                    class="w-5 h-5 rounded-full border object-cover"
                                     @error="handleImageError($event, token.id)"
                                   />
                                   <div
                                     v-else
-                                    class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
+                                    class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
                                     :title="token.symbol"
                                   >
                                     {{ token.symbol.substring(0, 2) }}
@@ -819,7 +817,7 @@
                                     <Button
                                       variant="outline"
                                       size="icon"
-                                      class="h-8 w-8"
+                                      class="h-7 w-7"
                                       @click="goToAddressChainFirstPage(address.id, chain.chainId)"
                                       :disabled="isAddressChainFirstPage(address.id, chain.chainId)"
                                       title="First page"
@@ -829,7 +827,7 @@
                                     <Button
                                       variant="outline"
                                       size="icon"
-                                      class="h-8 w-8"
+                                      class="h-7 w-7"
                                       @click="
                                         goToAddressChainPreviousPage(address.id, chain.chainId)
                                       "
@@ -841,7 +839,7 @@
                                     <Button
                                       variant="outline"
                                       size="icon"
-                                      class="h-8 w-8"
+                                      class="h-7 w-7"
                                       @click="goToAddressChainNextPage(address.id, chain.chainId)"
                                       :disabled="isAddressChainLastPage(address.id, chain.chainId)"
                                       title="Next page"
@@ -851,7 +849,7 @@
                                     <Button
                                       variant="outline"
                                       size="icon"
-                                      class="h-8 w-8"
+                                      class="h-7 w-7"
                                       @click="goToAddressChainLastPage(address.id, chain.chainId)"
                                       :disabled="isAddressChainLastPage(address.id, chain.chainId)"
                                       title="Last page"
@@ -872,11 +870,11 @@
 
               <!-- Total Row -->
               <tr class="bg-muted font-semibold border-t-2">
-                <td class="px-4 py-4">Total</td>
+                <td class="px-3 py-2.5">Total</td>
                 <td></td>
                 <td></td>
                 <td></td>
-                <td class="px-4 py-4 font-mono">
+                <td class="px-3 py-2.5 font-mono">
                   {{ currencySymbols[selectedCurrency] }}{{ formatValue(getTotalValue()) }}
                 </td>
                 <td></td>
@@ -975,12 +973,12 @@
                     v-if="!failedChainImages[chain.id]"
                     :src="`/images/chains/${chain.id}.png`"
                     :alt="chain.name"
-                    class="w-6 h-6 rounded-full object-cover"
+                    class="w-5 h-5 rounded-full object-cover"
                     @error="failedChainImages[chain.id] = true"
                   />
                   <div
                     v-else
-                    class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-xs font-semibold"
+                    class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-xs font-semibold"
                   >
                     {{ (chain.name || chain.id || '?').charAt(0).toUpperCase() }}
                   </div>
@@ -1104,12 +1102,12 @@
                     v-if="!failedChainImages[chain.id]"
                     :src="`/images/chains/${chain.id}.png`"
                     :alt="chain.name"
-                    class="w-6 h-6 rounded-full object-cover"
+                    class="w-5 h-5 rounded-full object-cover"
                     @error="failedChainImages[chain.id] = true"
                   />
                   <div
                     v-else
-                    class="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-xs font-semibold"
+                    class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-xs font-semibold"
                   >
                     {{ (chain.name || chain.id || '?').charAt(0).toUpperCase() }}
                   </div>
@@ -1972,6 +1970,10 @@ const deleteAddress = async (addressId: number) => {
       alert('Failed to delete address: ' + error.message)
     }
   }
+}
+
+const openDeBank = (address: string) => {
+  window.open(`https://debank.com/profile/${address}`, '_blank')
 }
 
 const addNewWalletTag = () => {
