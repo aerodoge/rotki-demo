@@ -14,6 +14,32 @@
         </label>
       </div>
       <div class="flex items-center gap-2">
+        <!-- View Mode Toggle -->
+        <div class="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md border">
+          <span class="text-xs font-medium text-muted-foreground">View:</span>
+          <button
+            @click="viewMode = 'wallet'"
+            :class="[
+              'px-2.5 py-1 text-xs font-medium rounded transition-colors',
+              viewMode === 'wallet'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            ]"
+          >
+            Wallet
+          </button>
+          <button
+            @click="viewMode = 'address'"
+            :class="[
+              'px-2.5 py-1 text-xs font-medium rounded transition-colors',
+              viewMode === 'address'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            ]"
+          >
+            Address
+          </button>
+        </div>
         <Select v-model="sortBy">
           <SelectTrigger class="w-[140px] h-9">
             <SelectValue />
@@ -74,7 +100,7 @@
             <thead class="border-b bg-muted/50">
               <tr>
                 <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
-                  WALLET
+                  {{ viewMode === 'wallet' ? 'WALLET' : 'ADDRESS' }}
                 </th>
                 <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
                   Chains
@@ -96,814 +122,1071 @@
               </tr>
             </thead>
             <tbody>
-              <template v-for="wallet in filteredWallets" :key="wallet.id">
-                <!-- Wallet Row -->
-                <tr
-                  class="border-b hover:bg-accent/50 cursor-pointer transition-all group"
-                  @click="toggleWallet(wallet.id)"
-                >
-                  <td class="px-3 py-2.5">
-                    <div class="flex items-center gap-2">
-                      <span
-                        class="text-xs text-muted-foreground transform transition-transform"
-                        :class="{ 'rotate-90': expandedWallets[wallet.id] }"
-                      >
-                        ▶
-                      </span>
-                      <img
-                        :src="getWalletAvatar(wallet.name, wallet.id)"
-                        :alt="wallet.name"
-                        class="w-7 h-7 rounded-lg"
-                      />
-                      <span class="font-medium text-sm">{{ wallet.name }}</span>
-                    </div>
-                  </td>
-                  <td class="px-3 py-2.5">
-                    <div class="flex items-center gap-1">
-                      <template
-                        v-for="(chainId, index) in getWalletUniqueChains(wallet.id).slice(0, 3)"
-                        :key="chainId"
-                      >
-                        <img
-                          v-if="getChainLogo(chainId) && !failedChainImages[chainId]"
-                          :src="getChainLogo(chainId)"
-                          :alt="chainId"
-                          :title="getChainName(chainId)"
-                          class="w-5 h-5 rounded-full object-cover border border-border"
-                          @error="
-                            () => {
-                              console.log(
-                                'Image load failed for chain:',
-                                chainId,
-                                getChainLogo(chainId)
-                              )
-                              failedChainImages[chainId] = true
-                            }
-                          "
-                        />
-                        <div
-                          v-else
-                          class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-[10px] font-semibold border border-purple-400"
-                          :title="getChainName(chainId)"
-                        >
-                          {{ getChainName(chainId).charAt(0).toUpperCase() }}
-                        </div>
-                      </template>
-                      <div
-                        v-if="getWalletChainCount(wallet.id) > 3"
-                        class="w-5 h-5 rounded-full bg-muted hover:bg-accent flex items-center justify-center text-[10px] font-semibold text-muted-foreground border border-border cursor-pointer transition-colors"
-                        :title="`${getWalletChainCount(wallet.id) - 3} more chains`"
-                      >
-                        +{{ getWalletChainCount(wallet.id) - 3 }}
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-3 py-2.5">
-                    <div class="flex gap-2 flex-wrap">
-                      <Badge
-                        v-for="tag in wallet.tags || []"
-                        :key="tag"
-                        variant="outline"
-                        class="border-primary/30 text-primary/80"
-                      >
-                        {{ tag }}
-                      </Badge>
-                    </div>
-                  </td>
-                  <td class="px-3 py-2.5">
-                    <div class="flex items-center gap-2">
-                      <span class="text-sm text-muted-foreground"
-                        >{{ getWalletAssetCount(wallet.id) }} assets</span
-                      >
-                    </div>
-                  </td>
-                  <td class="px-3 py-2.5">
-                    <div class="font-mono font-semibold text-primary">
-                      {{ currencySymbols[selectedCurrency]
-                      }}{{ formatValue(getTotalValueByWallet(wallet.id)) }}
-                    </div>
-                  </td>
-                  <td class="px-3 py-2.5">
-                    <div class="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        class="h-7 w-7"
-                        @click.stop="refreshWallet(wallet.id)"
-                        title="Refresh"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        >
-                          <polyline points="23 4 23 10 17 10" />
-                          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                        </svg>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        class="h-7 w-7"
-                        @click.stop="editWallet(wallet)"
-                        title="Edit"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        >
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        class="h-7 w-7 hover:text-destructive"
-                        @click.stop="deleteWallet(wallet.id)"
-                        title="Delete"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        >
-                          <polyline points="3 6 5 6 21 6" />
-                          <path
-                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                          />
-                        </svg>
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-
-                <!-- Expanded Wallet: Addresses -->
-                <template v-if="expandedWallets[wallet.id]">
-                  <!-- Address Header -->
+              <!-- Wallet View Mode -->
+              <template v-if="viewMode === 'wallet'">
+                <template v-for="wallet in filteredWallets" :key="wallet.id">
+                  <!-- Wallet Row -->
                   <tr
-                    v-if="getAddressesByWallet(wallet.id).length > 0"
-                    class="bg-muted/30 border-b"
+                    class="border-b hover:bg-accent/50 cursor-pointer transition-all group"
+                    @click="toggleWallet(wallet.id)"
                   >
-                    <th
-                      class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
-                    >
-                      WALLET
-                    </th>
-                    <th
-                      class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
-                    >
-                      Chains
-                    </th>
-                    <th
-                      class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
-                    >
-                      Tags
-                    </th>
-                    <th
-                      class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
-                    >
-                      Assets
-                    </th>
-                    <th
-                      class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
-                    >
-                      {{ selectedCurrency }} value
-                    </th>
-                    <th
-                      class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase"
-                    >
-                      Actions
-                    </th>
+                    <td class="px-3 py-2.5">
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="text-xs text-muted-foreground transform transition-transform"
+                          :class="{ 'rotate-90': expandedWallets[wallet.id] }"
+                        >
+                          ▶
+                        </span>
+                        <img
+                          :src="getWalletAvatar(wallet.name, wallet.id)"
+                          :alt="wallet.name"
+                          class="w-7 h-7 rounded-lg"
+                        />
+                        <span class="font-medium text-sm">{{ wallet.name }}</span>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <div class="flex items-center gap-1">
+                        <template
+                          v-for="(chainId, index) in getWalletUniqueChains(wallet.id).slice(0, 3)"
+                          :key="chainId"
+                        >
+                          <img
+                            v-if="getChainLogo(chainId) && !failedChainImages[chainId]"
+                            :src="getChainLogo(chainId)"
+                            :alt="chainId"
+                            :title="getChainName(chainId)"
+                            class="w-5 h-5 rounded-full object-cover border border-border"
+                            @error="
+                              () => {
+                                console.log(
+                                  'Image load failed for chain:',
+                                  chainId,
+                                  getChainLogo(chainId)
+                                )
+                                failedChainImages[chainId] = true
+                              }
+                            "
+                          />
+                          <div
+                            v-else
+                            class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-[10px] font-semibold border border-purple-400"
+                            :title="getChainName(chainId)"
+                          >
+                            {{ getChainName(chainId).charAt(0).toUpperCase() }}
+                          </div>
+                        </template>
+                        <div
+                          v-if="getWalletChainCount(wallet.id) > 3"
+                          class="w-5 h-5 rounded-full bg-muted hover:bg-accent flex items-center justify-center text-[10px] font-semibold text-muted-foreground border border-border cursor-pointer transition-colors"
+                          :title="`${getWalletChainCount(wallet.id) - 3} more chains`"
+                        >
+                          +{{ getWalletChainCount(wallet.id) - 3 }}
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <div class="flex gap-2 flex-wrap">
+                        <Badge
+                          v-for="tag in wallet.tags || []"
+                          :key="tag"
+                          variant="outline"
+                          class="border-primary/30 text-primary/80"
+                        >
+                          {{ tag }}
+                        </Badge>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm text-muted-foreground"
+                          >{{ getWalletAssetCount(wallet.id) }} assets</span
+                        >
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <div class="font-mono font-semibold text-primary">
+                        {{ currencySymbols[selectedCurrency]
+                        }}{{ formatValue(getTotalValueByWallet(wallet.id)) }}
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <div class="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          class="h-7 w-7"
+                          @click.stop="refreshWallet(wallet.id)"
+                          title="Refresh"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <polyline points="23 4 23 10 17 10" />
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                          </svg>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          class="h-7 w-7"
+                          @click.stop="editWallet(wallet)"
+                          title="Edit"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          class="h-7 w-7 hover:text-destructive"
+                          @click.stop="deleteWallet(wallet.id)"
+                          title="Delete"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <polyline points="3 6 5 6 21 6" />
+                            <path
+                              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                            />
+                          </svg>
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
 
-                  <!-- Address Rows -->
-                  <template v-for="address in getAddressesByWallet(wallet.id)" :key="address.id">
+                  <!-- Expanded Wallet: Addresses -->
+                  <template v-if="expandedWallets[wallet.id]">
+                    <!-- Address Header -->
                     <tr
-                      class="bg-muted/30 border-b hover:bg-muted/50 cursor-pointer transition-all group"
-                      @click="toggleAddress(address.id)"
+                      v-if="getAddressesByWallet(wallet.id).length > 0"
+                      class="bg-muted/30 border-b"
                     >
-                      <td class="px-4 py-3 pl-8">
-                        <div class="flex items-center gap-2">
-                          <span
-                            class="text-xs text-muted-foreground transform transition-transform group-hover:scale-110"
-                            :class="{ 'rotate-90': expandedAddresses[address.id] }"
-                          >
-                            ▶
-                          </span>
-                          <div
-                            class="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 group-hover:ring-primary/40 transition-all"
-                          >
-                            <span class="text-xs text-primary font-semibold">
-                              {{ address.label?.[0]?.toUpperCase() || 'A' }}
-                            </span>
-                          </div>
-                          <div class="flex flex-col">
-                            <span
-                              class="text-sm font-medium group-hover:text-primary transition-colors"
-                              >{{ address.label || 'Unlabeled' }}</span
-                            >
-                            <div class="flex items-center gap-1.5">
-                              <span class="text-xs text-muted-foreground font-mono">{{
-                                formatAddress(address.address)
-                              }}</span>
-                              <button
-                                @click.stop="copyAddressToClipboard(address.address)"
-                                class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-accent rounded"
-                                :title="
-                                  copiedAddress === address.address ? 'Copied!' : 'Copy address'
-                                "
-                              >
-                                <svg
-                                  v-if="copiedAddress !== address.address"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  class="h-3.5 w-3.5 text-muted-foreground hover:text-foreground"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  stroke-width="2"
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                >
-                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                  <path
-                                    d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-                                  />
-                                </svg>
-                                <svg
-                                  v-else
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  class="h-3.5 w-3.5 text-green-500"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  stroke-width="2"
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                >
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="px-4 py-3">
-                        <div class="flex items-center gap-1">
-                          <template
-                            v-for="chainId in getAddressChains(address).slice(0, 3)"
-                            :key="chainId"
-                          >
-                            <img
-                              v-if="getChainLogo(chainId) && !failedChainImages[chainId]"
-                              :src="getChainLogo(chainId)"
-                              :alt="chainId"
-                              :title="getChainName(chainId)"
-                              class="w-5 h-5 rounded-full object-cover border border-border"
-                              @error="failedChainImages[chainId] = true"
-                            />
-                            <div
-                              v-else
-                              class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-[8px] font-semibold border border-purple-400"
-                              :title="getChainName(chainId)"
-                            >
-                              {{ getChainName(chainId).charAt(0).toUpperCase() }}
-                            </div>
-                          </template>
-                          <div
-                            v-if="getAddressChains(address).length > 3"
-                            class="w-5 h-5 rounded-full bg-muted hover:bg-accent flex items-center justify-center text-[9px] font-semibold text-muted-foreground border border-border cursor-pointer transition-colors"
-                            :title="`${getAddressChains(address).length - 3} more chains`"
-                          >
-                            +{{ getAddressChains(address).length - 3 }}
-                          </div>
-                        </div>
-                      </td>
-                      <td class="px-4 py-3">
-                        <div class="flex gap-1 flex-wrap">
-                          <Badge
-                            v-for="tag in address.tags || []"
-                            :key="tag"
-                            variant="secondary"
-                            class="text-xs bg-primary/5 text-primary/70 border-primary/20"
-                          >
-                            {{ tag }}
-                          </Badge>
-                        </div>
-                      </td>
-                      <td class="px-4 py-3">
-                        <div class="flex items-center gap-1">
-                          <div
-                            v-for="token in getAddressWalletTokens(address).slice(0, 3)"
-                            :key="token.id"
-                            class="w-5 h-5"
-                          >
-                            <img
-                              v-if="
-                                token.logo_url &&
-                                token.logo_url.length > 0 &&
-                                !failedImages[token.id]
-                              "
-                              :src="token.logo_url"
-                              :alt="token.symbol"
-                              :title="token.symbol"
-                              class="w-5 h-5 rounded-full border object-cover"
-                              @error="handleImageError($event, token.id)"
-                            />
-                            <div
-                              v-else
-                              class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
-                              :title="token.symbol"
-                            >
-                              {{ token.symbol.substring(0, 2) }}
-                            </div>
-                          </div>
-                          <span
-                            v-if="getAddressWalletTokens(address).length > 3"
-                            class="text-xs text-muted-foreground ml-1"
-                          >
-                            +{{ getAddressWalletTokens(address).length - 3 }}
-                          </span>
-                        </div>
-                      </td>
-                      <td class="px-4 py-3">
-                        <div class="font-mono text-sm">
-                          {{ currencySymbols[selectedCurrency]
-                          }}{{ formatValue(getAddressValue(address)) }}
-                        </div>
-                      </td>
-                      <td class="px-4 py-3">
-                        <div class="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            class="h-7 w-7"
-                            @click.stop="refreshAddress(address.id)"
-                            title="Refresh"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="h-4 w-4"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            >
-                              <polyline points="23 4 23 10 17 10" />
-                              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                            </svg>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            class="h-7 w-7"
-                            @click.stop="editAddress(address)"
-                            title="Edit"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="h-4 w-4"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            >
-                              <path
-                                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                              />
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            class="h-7 w-7"
-                            @click.stop="openDeBank(address.address)"
-                            title="View on DeBank"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="h-4 w-4"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            >
-                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                              <polyline points="15 3 21 3 21 9" />
-                              <line x1="10" y1="14" x2="21" y2="3" />
-                            </svg>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            class="h-7 w-7 hover:text-destructive"
-                            @click.stop="deleteAddress(address.id)"
-                            title="Delete"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="h-4 w-4"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            >
-                              <polyline points="3 6 5 6 21 6" />
-                              <path
-                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                              />
-                            </svg>
-                          </Button>
-                        </div>
-                      </td>
+                      <th
+                        class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                      >
+                        WALLET
+                      </th>
+                      <th
+                        class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                      >
+                        Chains
+                      </th>
+                      <th
+                        class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                      >
+                        Tags
+                      </th>
+                      <th
+                        class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                      >
+                        Assets
+                      </th>
+                      <th
+                        class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
+                      >
+                        {{ selectedCurrency }} value
+                      </th>
+                      <th
+                        class="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase"
+                      >
+                        Actions
+                      </th>
                     </tr>
 
-                    <!-- Expanded Address: Tokens -->
-                    <template v-if="expandedAddresses[address.id]">
-                      <!-- No tokens message -->
-                      <tr v-if="!address.tokens || address.tokens.length === 0" class="bg-muted/10">
-                        <td colspan="6" class="px-4 py-8">
-                          <div class="text-center text-sm text-muted-foreground italic">
-                            No tokens found for this address. Click the refresh button to sync data.
+                    <!-- Address Rows -->
+                    <template v-for="address in getAddressesByWallet(wallet.id)" :key="address.id">
+                      <tr
+                        class="bg-muted/30 border-b hover:bg-muted/50 cursor-pointer transition-all group"
+                        @click="toggleAddress(address.id)"
+                      >
+                        <td class="px-4 py-3 pl-8">
+                          <div class="flex items-center gap-2">
+                            <span
+                              class="text-xs text-muted-foreground transform transition-transform group-hover:scale-110"
+                              :class="{ 'rotate-90': expandedAddresses[address.id] }"
+                            >
+                              ▶
+                            </span>
+                            <div
+                              class="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 group-hover:ring-primary/40 transition-all"
+                            >
+                              <span class="text-xs text-primary font-semibold">
+                                {{ address.label?.[0]?.toUpperCase() || 'A' }}
+                              </span>
+                            </div>
+                            <div class="flex flex-col">
+                              <span
+                                class="text-sm font-medium group-hover:text-primary transition-colors"
+                                >{{ address.label || 'Unlabeled' }}</span
+                              >
+                              <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-muted-foreground font-mono">{{
+                                  formatAddress(address.address)
+                                }}</span>
+                                <button
+                                  @click.stop="copyAddressToClipboard(address.address)"
+                                  class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-accent rounded"
+                                  :title="
+                                    copiedAddress === address.address ? 'Copied!' : 'Copy address'
+                                  "
+                                >
+                                  <svg
+                                    v-if="copiedAddress !== address.address"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="h-3.5 w-3.5 text-muted-foreground hover:text-foreground"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                  >
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                    <path
+                                      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                                    />
+                                  </svg>
+                                  <svg
+                                    v-else
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="h-3.5 w-3.5 text-green-500"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                  >
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-4 py-3">
+                          <div class="flex items-center gap-1">
+                            <template
+                              v-for="chainId in getAddressChains(address).slice(0, 3)"
+                              :key="chainId"
+                            >
+                              <img
+                                v-if="getChainLogo(chainId) && !failedChainImages[chainId]"
+                                :src="getChainLogo(chainId)"
+                                :alt="chainId"
+                                :title="getChainName(chainId)"
+                                class="w-5 h-5 rounded-full object-cover border border-border"
+                                @error="failedChainImages[chainId] = true"
+                              />
+                              <div
+                                v-else
+                                class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-[8px] font-semibold border border-purple-400"
+                                :title="getChainName(chainId)"
+                              >
+                                {{ getChainName(chainId).charAt(0).toUpperCase() }}
+                              </div>
+                            </template>
+                            <div
+                              v-if="getAddressChains(address).length > 3"
+                              class="w-5 h-5 rounded-full bg-muted hover:bg-accent flex items-center justify-center text-[9px] font-semibold text-muted-foreground border border-border cursor-pointer transition-colors"
+                              :title="`${getAddressChains(address).length - 3} more chains`"
+                            >
+                              +{{ getAddressChains(address).length - 3 }}
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-4 py-3">
+                          <div class="flex gap-1 flex-wrap">
+                            <Badge
+                              v-for="tag in address.tags || []"
+                              :key="tag"
+                              variant="secondary"
+                              class="text-xs bg-primary/5 text-primary/70 border-primary/20"
+                            >
+                              {{ tag }}
+                            </Badge>
+                          </div>
+                        </td>
+                        <td class="px-4 py-3">
+                          <div class="flex items-center gap-1">
+                            <div
+                              v-for="token in getAddressWalletTokens(address).slice(0, 3)"
+                              :key="token.id"
+                              class="w-5 h-5"
+                            >
+                              <img
+                                v-if="
+                                  token.logo_url &&
+                                  token.logo_url.length > 0 &&
+                                  !failedImages[token.id]
+                                "
+                                :src="token.logo_url"
+                                :alt="token.symbol"
+                                :title="token.symbol"
+                                class="w-5 h-5 rounded-full border object-cover"
+                                @error="handleImageError($event, token.id)"
+                              />
+                              <div
+                                v-else
+                                class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
+                                :title="token.symbol"
+                              >
+                                {{ token.symbol.substring(0, 2) }}
+                              </div>
+                            </div>
+                            <span
+                              v-if="getAddressWalletTokens(address).length > 3"
+                              class="text-xs text-muted-foreground ml-1"
+                            >
+                              +{{ getAddressWalletTokens(address).length - 3 }}
+                            </span>
+                          </div>
+                        </td>
+                        <td class="px-4 py-3">
+                          <div class="font-mono text-sm">
+                            {{ currencySymbols[selectedCurrency]
+                            }}{{ formatValue(getAddressValue(address)) }}
+                          </div>
+                        </td>
+                        <td class="px-4 py-3">
+                          <div class="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              class="h-7 w-7"
+                              @click.stop="refreshAddress(address.id)"
+                              title="Refresh"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              >
+                                <polyline points="23 4 23 10 17 10" />
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                              </svg>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              class="h-7 w-7"
+                              @click.stop="editAddress(address)"
+                              title="Edit"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              >
+                                <path
+                                  d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                                />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              class="h-7 w-7"
+                              @click.stop="openDeBank(address.address)"
+                              title="View on DeBank"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              >
+                                <path
+                                  d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                                />
+                                <polyline points="15 3 21 3 21 9" />
+                                <line x1="10" y1="14" x2="21" y2="3" />
+                              </svg>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              class="h-7 w-7 hover:text-destructive"
+                              @click.stop="deleteAddress(address.id)"
+                              title="Delete"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-4 w-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              >
+                                <polyline points="3 6 5 6 21 6" />
+                                <path
+                                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                                />
+                              </svg>
+                            </Button>
                           </div>
                         </td>
                       </tr>
 
-                      <!-- View Mode Tabs -->
-                      <tr v-if="address.tokens && address.tokens.length > 0" class="bg-muted/10">
-                        <td colspan="6" class="p-0">
-                          <Tabs
-                            :model-value="addressViewMode[address.id] || 'aggregated'"
-                            @update:model-value="(val) => setAddressViewMode(address.id, val)"
-                            class="w-full"
-                          >
-                            <TabsList
-                              class="w-full rounded-none border-b bg-transparent p-0 h-auto"
-                            >
-                              <TabsTrigger
-                                value="aggregated"
-                                class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-                              >
-                                Aggregated assets
-                              </TabsTrigger>
-                              <TabsTrigger
-                                value="perChain"
-                                class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-                              >
-                                Per chain
-                              </TabsTrigger>
-                            </TabsList>
-                          </Tabs>
-                        </td>
-                      </tr>
-
-                      <!-- Aggregated View -->
-                      <template v-if="addressViewMode[address.id] === 'aggregated'">
-                        <!-- Token Header -->
+                      <!-- Expanded Address: Tokens -->
+                      <template v-if="expandedAddresses[address.id]">
+                        <!-- No tokens message -->
                         <tr
-                          v-if="address.tokens && address.tokens.length > 0"
-                          class="bg-muted/30 border-b"
+                          v-if="!address.tokens || address.tokens.length === 0"
+                          class="bg-muted/10"
                         >
+                          <td colspan="6" class="px-4 py-8">
+                            <div class="text-center text-sm text-muted-foreground italic">
+                              No tokens found for this address. Click the refresh button to sync
+                              data.
+                            </div>
+                          </td>
+                        </tr>
+
+                        <!-- View Mode Tabs -->
+                        <tr v-if="address.tokens && address.tokens.length > 0" class="bg-muted/10">
                           <td colspan="6" class="p-0">
-                            <div
-                              class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 pl-[52px] pr-4 py-3 text-xs font-medium text-muted-foreground uppercase"
+                            <Tabs
+                              :model-value="addressViewMode[address.id] || 'aggregated'"
+                              @update:model-value="(val) => setAddressViewMode(address.id, val)"
+                              class="w-full"
                             >
-                              <div>Asset</div>
-                              <div></div>
-                              <div>Location</div>
-                              <div class="text-right">Price in {{ selectedCurrency }}</div>
-                              <div class="text-right">Amount</div>
-                              <div class="text-right">{{ selectedCurrency }} Value</div>
-                            </div>
+                              <TabsList
+                                class="w-full rounded-none border-b bg-transparent p-0 h-auto"
+                              >
+                                <TabsTrigger
+                                  value="aggregated"
+                                  class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+                                >
+                                  Aggregated assets
+                                </TabsTrigger>
+                                <TabsTrigger
+                                  value="perChain"
+                                  class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+                                >
+                                  Per chain
+                                </TabsTrigger>
+                              </TabsList>
+                            </Tabs>
                           </td>
                         </tr>
-                        <TokenDetailRow
-                          v-for="token in getPaginatedTokens(address.id)"
-                          :key="token.id"
-                          :token="token"
-                        />
 
-                        <!-- Pagination -->
-                        <tr
-                          v-if="address.tokens && address.tokens.length > 0"
-                          class="bg-muted/5 border-t"
-                        >
-                          <td colspan="6" class="px-4 py-3">
-                            <div class="flex items-center justify-between">
-                              <div class="flex items-center gap-4 text-sm text-muted-foreground">
-                                <span class="font-medium text-foreground">Rows per page:</span>
-                                <Select
-                                  :model-value="String(tokenPagination[address.id]?.pageSize || 10)"
-                                  @update:model-value="
-                                    (val) => {
-                                      tokenPagination[address.id].pageSize = Number(val)
-                                      onPageSizeChange(address.id)
-                                    }
-                                  "
-                                >
-                                  <SelectTrigger class="w-20 h-8">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="20">20</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                    <SelectItem value="100">100</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <span>
-                                  Items {{ getStartIndex(address.id) }}-{{
-                                    getEndIndex(address.id)
-                                  }}
-                                  of {{ getFilteredTokensCount(address.id) }}
-                                </span>
-                                <Badge variant="secondary">
-                                  Page {{ tokenPagination[address.id]?.currentPage || 1 }} of
-                                  {{ getTotalPages(address.id) }}
-                                </Badge>
-                              </div>
-                              <div class="flex gap-1">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  class="h-7 w-7"
-                                  @click="goToFirstPage(address.id)"
-                                  :disabled="isFirstPage(address.id)"
-                                  title="First page"
-                                >
-                                  ⟨⟨
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  class="h-7 w-7"
-                                  @click="goToPreviousPage(address.id)"
-                                  :disabled="isFirstPage(address.id)"
-                                  title="Previous page"
-                                >
-                                  ⟨
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  class="h-7 w-7"
-                                  @click="goToNextPage(address.id)"
-                                  :disabled="isLastPage(address.id)"
-                                  title="Next page"
-                                >
-                                  ⟩
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  class="h-7 w-7"
-                                  @click="goToLastPage(address.id)"
-                                  :disabled="isLastPage(address.id)"
-                                  title="Last page"
-                                >
-                                  ⟩⟩
-                                </Button>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      </template>
-
-                      <!-- Per Chain View -->
-                      <template v-if="addressViewMode[address.id] === 'perChain'">
-                        <template
-                          v-for="chain in getAddressChainGroups(address.id)"
-                          :key="chain.chainId"
-                        >
-                          <!-- Chain Group Row -->
+                        <!-- Aggregated View -->
+                        <template v-if="addressViewMode[address.id] === 'aggregated'">
+                          <!-- Token Header -->
                           <tr
-                            class="bg-muted/20 hover:bg-muted/30 cursor-pointer transition-colors"
-                            @click="toggleAddressChain(address.id, chain.chainId)"
+                            v-if="address.tokens && address.tokens.length > 0"
+                            class="bg-muted/30 border-b"
                           >
-                            <td class="pl-12 pr-4 py-3">
-                              <div class="flex items-center gap-3">
-                                <span class="text-xs text-muted-foreground">
-                                  {{
-                                    expandedAddressChains[`${address.id}_${chain.chainId}`]
-                                      ? '▼'
-                                      : '▶'
-                                  }}
-                                </span>
-                                <img
-                                  v-if="chain.logoUrl && !failedChainImages[chain.chainId]"
-                                  :src="chain.logoUrl"
-                                  :alt="chain.name"
-                                  class="w-7 h-7 rounded-full object-cover"
-                                  @error="failedChainImages[chain.chainId] = true"
-                                />
-                                <div
-                                  v-else
-                                  class="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-xs font-semibold"
-                                >
-                                  {{ (chain.name || chain.chainId || '?').charAt(0).toUpperCase() }}
-                                </div>
-                                <span class="font-medium">{{ chain.name || chain.chainId }}</span>
+                            <td colspan="6" class="p-0">
+                              <div
+                                class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 pl-[52px] pr-4 py-3 text-xs font-medium text-muted-foreground uppercase"
+                              >
+                                <div>Asset</div>
+                                <div></div>
+                                <div>Location</div>
+                                <div class="text-right">Price in {{ selectedCurrency }}</div>
+                                <div class="text-right">Amount</div>
+                                <div class="text-right">{{ selectedCurrency }} Value</div>
                               </div>
                             </td>
-                            <td class="px-4 py-3"></td>
-                            <td class="px-4 py-3"></td>
-                            <td class="px-4 py-3">
-                              <div class="flex items-center gap-1">
-                                <div
-                                  v-for="token in chain.tokens.slice(0, 2)"
-                                  :key="token.id"
-                                  class="w-5 h-5"
-                                >
-                                  <img
-                                    v-if="
-                                      token.logo_url &&
-                                      token.logo_url.length > 0 &&
-                                      !failedImages[token.id]
+                          </tr>
+                          <TokenDetailRow
+                            v-for="token in getPaginatedTokens(address.id)"
+                            :key="token.id"
+                            :token="token"
+                          />
+
+                          <!-- Pagination -->
+                          <tr
+                            v-if="address.tokens && address.tokens.length > 0"
+                            class="bg-muted/5 border-t"
+                          >
+                            <td colspan="6" class="px-4 py-3">
+                              <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4 text-sm text-muted-foreground">
+                                  <span class="font-medium text-foreground">Rows per page:</span>
+                                  <Select
+                                    :model-value="
+                                      String(tokenPagination[address.id]?.pageSize || 10)
                                     "
-                                    :src="token.logo_url"
-                                    :alt="token.symbol"
-                                    :title="token.symbol"
-                                    class="w-5 h-5 rounded-full border object-cover"
-                                    @error="handleImageError($event, token.id)"
+                                    @update:model-value="
+                                      (val) => {
+                                        tokenPagination[address.id].pageSize = Number(val)
+                                        onPageSizeChange(address.id)
+                                      }
+                                    "
+                                  >
+                                    <SelectTrigger class="w-20 h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="10">10</SelectItem>
+                                      <SelectItem value="20">20</SelectItem>
+                                      <SelectItem value="50">50</SelectItem>
+                                      <SelectItem value="100">100</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <span>
+                                    Items {{ getStartIndex(address.id) }}-{{
+                                      getEndIndex(address.id)
+                                    }}
+                                    of {{ getFilteredTokensCount(address.id) }}
+                                  </span>
+                                  <Badge variant="secondary">
+                                    Page {{ tokenPagination[address.id]?.currentPage || 1 }} of
+                                    {{ getTotalPages(address.id) }}
+                                  </Badge>
+                                </div>
+                                <div class="flex gap-1">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    class="h-7 w-7"
+                                    @click="goToFirstPage(address.id)"
+                                    :disabled="isFirstPage(address.id)"
+                                    title="First page"
+                                  >
+                                    ⟨⟨
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    class="h-7 w-7"
+                                    @click="goToPreviousPage(address.id)"
+                                    :disabled="isFirstPage(address.id)"
+                                    title="Previous page"
+                                  >
+                                    ⟨
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    class="h-7 w-7"
+                                    @click="goToNextPage(address.id)"
+                                    :disabled="isLastPage(address.id)"
+                                    title="Next page"
+                                  >
+                                    ⟩
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    class="h-7 w-7"
+                                    @click="goToLastPage(address.id)"
+                                    :disabled="isLastPage(address.id)"
+                                    title="Last page"
+                                  >
+                                    ⟩⟩
+                                  </Button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        </template>
+
+                        <!-- Per Chain View -->
+                        <template v-if="addressViewMode[address.id] === 'perChain'">
+                          <template
+                            v-for="chain in getAddressChainGroups(address.id)"
+                            :key="chain.chainId"
+                          >
+                            <!-- Chain Group Row -->
+                            <tr
+                              class="bg-muted/20 hover:bg-muted/30 cursor-pointer transition-colors"
+                              @click="toggleAddressChain(address.id, chain.chainId)"
+                            >
+                              <td class="pl-12 pr-4 py-3">
+                                <div class="flex items-center gap-3">
+                                  <span class="text-xs text-muted-foreground">
+                                    {{
+                                      expandedAddressChains[`${address.id}_${chain.chainId}`]
+                                        ? '▼'
+                                        : '▶'
+                                    }}
+                                  </span>
+                                  <img
+                                    v-if="chain.logoUrl && !failedChainImages[chain.chainId]"
+                                    :src="chain.logoUrl"
+                                    :alt="chain.name"
+                                    class="w-7 h-7 rounded-full object-cover"
+                                    @error="failedChainImages[chain.chainId] = true"
                                   />
                                   <div
                                     v-else
-                                    class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
-                                    :title="token.symbol"
+                                    class="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-xs font-semibold"
                                   >
-                                    {{ token.symbol.substring(0, 2) }}
+                                    {{
+                                      (chain.name || chain.chainId || '?').charAt(0).toUpperCase()
+                                    }}
                                   </div>
-                                </div>
-                                <span
-                                  v-if="chain.tokens.length > 2"
-                                  class="text-xs text-muted-foreground"
-                                >
-                                  +{{ chain.tokens.length - 2 }}
-                                </span>
-                              </div>
-                            </td>
-                            <td class="px-4 py-3 text-right">
-                              <span class="font-mono font-semibold">
-                                {{ currencySymbols[selectedCurrency]
-                                }}{{ formatValue(chain.totalValue) }}
-                              </span>
-                            </td>
-                            <td class="px-4 py-3"></td>
-                          </tr>
-
-                          <!-- Expanded Chain Tokens -->
-                          <template v-if="expandedAddressChains[`${address.id}_${chain.chainId}`]">
-                            <!-- Chain Token Header -->
-                            <tr class="bg-muted/30 border-b">
-                              <td colspan="6" class="p-0">
-                                <div
-                                  class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 pl-[52px] pr-4 py-3 text-xs font-medium text-muted-foreground uppercase"
-                                >
-                                  <div>Asset</div>
-                                  <div></div>
-                                  <div>Location</div>
-                                  <div class="text-right">Price in {{ selectedCurrency }}</div>
-                                  <div class="text-right">Amount</div>
-                                  <div class="text-right">{{ selectedCurrency }} Value</div>
+                                  <span class="font-medium">{{ chain.name || chain.chainId }}</span>
                                 </div>
                               </td>
-                            </tr>
-                            <TokenDetailRow
-                              v-for="token in getPaginatedAddressChainTokens(
-                                address.id,
-                                chain.chainId
-                              )"
-                              :key="token.id"
-                              :token="token"
-                            />
-
-                            <!-- Chain Pagination -->
-                            <tr class="bg-muted/5 border-t">
-                              <td colspan="6" class="px-4 py-3">
-                                <div class="flex items-center justify-between">
+                              <td class="px-4 py-3"></td>
+                              <td class="px-4 py-3"></td>
+                              <td class="px-4 py-3">
+                                <div class="flex items-center gap-1">
                                   <div
-                                    class="flex items-center gap-4 text-sm text-muted-foreground"
+                                    v-for="token in chain.tokens.slice(0, 2)"
+                                    :key="token.id"
+                                    class="w-5 h-5"
                                   >
-                                    <span class="font-medium text-foreground">Rows per page:</span>
-                                    <Select
-                                      :model-value="
-                                        String(
-                                          addressChainPagination[`${address.id}_${chain.chainId}`]
-                                            ?.pageSize || 10
-                                        )
+                                    <img
+                                      v-if="
+                                        token.logo_url &&
+                                        token.logo_url.length > 0 &&
+                                        !failedImages[token.id]
                                       "
-                                      @update:model-value="
-                                        (val) => {
-                                          addressChainPagination[
-                                            `${address.id}_${chain.chainId}`
-                                          ].pageSize = Number(val)
-                                          onAddressChainPageSizeChange(address.id, chain.chainId)
-                                        }
-                                      "
+                                      :src="token.logo_url"
+                                      :alt="token.symbol"
+                                      :title="token.symbol"
+                                      class="w-5 h-5 rounded-full border object-cover"
+                                      @error="handleImageError($event, token.id)"
+                                    />
+                                    <div
+                                      v-else
+                                      class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
+                                      :title="token.symbol"
                                     >
-                                      <SelectTrigger class="w-20 h-8">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="10">10</SelectItem>
-                                        <SelectItem value="20">20</SelectItem>
-                                        <SelectItem value="50">50</SelectItem>
-                                        <SelectItem value="100">100</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <span>
-                                      Items
-                                      {{ getAddressChainStartIndex(address.id, chain.chainId) }}-{{
-                                        getAddressChainEndIndex(address.id, chain.chainId)
-                                      }}
-                                      of {{ chain.tokens.length }}
-                                    </span>
-                                    <Badge variant="secondary">
-                                      Page
-                                      {{
-                                        addressChainPagination[`${address.id}_${chain.chainId}`]
-                                          ?.currentPage || 1
-                                      }}
-                                      of {{ getAddressChainTotalPages(address.id, chain.chainId) }}
-                                    </Badge>
+                                      {{ token.symbol.substring(0, 2) }}
+                                    </div>
                                   </div>
-                                  <div class="flex gap-1">
-                                    <Button
-                                      variant="outline"
-                                      size="icon"
-                                      class="h-7 w-7"
-                                      @click="goToAddressChainFirstPage(address.id, chain.chainId)"
-                                      :disabled="isAddressChainFirstPage(address.id, chain.chainId)"
-                                      title="First page"
-                                    >
-                                      ⟨⟨
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="icon"
-                                      class="h-7 w-7"
-                                      @click="
-                                        goToAddressChainPreviousPage(address.id, chain.chainId)
-                                      "
-                                      :disabled="isAddressChainFirstPage(address.id, chain.chainId)"
-                                      title="Previous page"
-                                    >
-                                      ⟨
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="icon"
-                                      class="h-7 w-7"
-                                      @click="goToAddressChainNextPage(address.id, chain.chainId)"
-                                      :disabled="isAddressChainLastPage(address.id, chain.chainId)"
-                                      title="Next page"
-                                    >
-                                      ⟩
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="icon"
-                                      class="h-7 w-7"
-                                      @click="goToAddressChainLastPage(address.id, chain.chainId)"
-                                      :disabled="isAddressChainLastPage(address.id, chain.chainId)"
-                                      title="Last page"
-                                    >
-                                      ⟩⟩
-                                    </Button>
-                                  </div>
+                                  <span
+                                    v-if="chain.tokens.length > 2"
+                                    class="text-xs text-muted-foreground"
+                                  >
+                                    +{{ chain.tokens.length - 2 }}
+                                  </span>
                                 </div>
                               </td>
+                              <td class="px-4 py-3 text-right">
+                                <span class="font-mono font-semibold">
+                                  {{ currencySymbols[selectedCurrency]
+                                  }}{{ formatValue(chain.totalValue) }}
+                                </span>
+                              </td>
+                              <td class="px-4 py-3"></td>
                             </tr>
+
+                            <!-- Expanded Chain Tokens -->
+                            <template
+                              v-if="expandedAddressChains[`${address.id}_${chain.chainId}`]"
+                            >
+                              <!-- Chain Token Header -->
+                              <tr class="bg-muted/30 border-b">
+                                <td colspan="6" class="p-0">
+                                  <div
+                                    class="grid grid-cols-[50px_1fr_150px_150px_150px_150px] gap-4 pl-[52px] pr-4 py-3 text-xs font-medium text-muted-foreground uppercase"
+                                  >
+                                    <div>Asset</div>
+                                    <div></div>
+                                    <div>Location</div>
+                                    <div class="text-right">Price in {{ selectedCurrency }}</div>
+                                    <div class="text-right">Amount</div>
+                                    <div class="text-right">{{ selectedCurrency }} Value</div>
+                                  </div>
+                                </td>
+                              </tr>
+                              <TokenDetailRow
+                                v-for="token in getPaginatedAddressChainTokens(
+                                  address.id,
+                                  chain.chainId
+                                )"
+                                :key="token.id"
+                                :token="token"
+                              />
+
+                              <!-- Chain Pagination -->
+                              <tr class="bg-muted/5 border-t">
+                                <td colspan="6" class="px-4 py-3">
+                                  <div class="flex items-center justify-between">
+                                    <div
+                                      class="flex items-center gap-4 text-sm text-muted-foreground"
+                                    >
+                                      <span class="font-medium text-foreground"
+                                        >Rows per page:</span
+                                      >
+                                      <Select
+                                        :model-value="
+                                          String(
+                                            addressChainPagination[`${address.id}_${chain.chainId}`]
+                                              ?.pageSize || 10
+                                          )
+                                        "
+                                        @update:model-value="
+                                          (val) => {
+                                            addressChainPagination[
+                                              `${address.id}_${chain.chainId}`
+                                            ].pageSize = Number(val)
+                                            onAddressChainPageSizeChange(address.id, chain.chainId)
+                                          }
+                                        "
+                                      >
+                                        <SelectTrigger class="w-20 h-8">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="10">10</SelectItem>
+                                          <SelectItem value="20">20</SelectItem>
+                                          <SelectItem value="50">50</SelectItem>
+                                          <SelectItem value="100">100</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <span>
+                                        Items
+                                        {{
+                                          getAddressChainStartIndex(address.id, chain.chainId)
+                                        }}-{{
+                                          getAddressChainEndIndex(address.id, chain.chainId)
+                                        }}
+                                        of {{ chain.tokens.length }}
+                                      </span>
+                                      <Badge variant="secondary">
+                                        Page
+                                        {{
+                                          addressChainPagination[`${address.id}_${chain.chainId}`]
+                                            ?.currentPage || 1
+                                        }}
+                                        of
+                                        {{ getAddressChainTotalPages(address.id, chain.chainId) }}
+                                      </Badge>
+                                    </div>
+                                    <div class="flex gap-1">
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        class="h-7 w-7"
+                                        @click="
+                                          goToAddressChainFirstPage(address.id, chain.chainId)
+                                        "
+                                        :disabled="
+                                          isAddressChainFirstPage(address.id, chain.chainId)
+                                        "
+                                        title="First page"
+                                      >
+                                        ⟨⟨
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        class="h-7 w-7"
+                                        @click="
+                                          goToAddressChainPreviousPage(address.id, chain.chainId)
+                                        "
+                                        :disabled="
+                                          isAddressChainFirstPage(address.id, chain.chainId)
+                                        "
+                                        title="Previous page"
+                                      >
+                                        ⟨
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        class="h-7 w-7"
+                                        @click="goToAddressChainNextPage(address.id, chain.chainId)"
+                                        :disabled="
+                                          isAddressChainLastPage(address.id, chain.chainId)
+                                        "
+                                        title="Next page"
+                                      >
+                                        ⟩
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        class="h-7 w-7"
+                                        @click="goToAddressChainLastPage(address.id, chain.chainId)"
+                                        :disabled="
+                                          isAddressChainLastPage(address.id, chain.chainId)
+                                        "
+                                        title="Last page"
+                                      >
+                                        ⟩⟩
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            </template>
                           </template>
                         </template>
                       </template>
                     </template>
                   </template>
+                </template>
+              </template>
+
+              <!-- Address View Mode -->
+              <template v-else>
+                <template v-for="address in filteredAddresses" :key="address.id">
+                  <tr
+                    class="border-b hover:bg-accent/50 cursor-pointer transition-all group"
+                    @click="toggleAddress(address.id)"
+                  >
+                    <td class="px-3 py-2.5">
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="text-xs text-muted-foreground transform transition-transform"
+                          :class="{ 'rotate-90': expandedAddresses[address.id] }"
+                        >
+                          ▶
+                        </span>
+                        <div
+                          class="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center ring-1 ring-primary/20"
+                        >
+                          <span class="text-xs text-primary font-semibold">
+                            {{ address.label?.[0]?.toUpperCase() || 'A' }}
+                          </span>
+                        </div>
+                        <div class="flex flex-col">
+                          <span class="text-sm font-medium">{{
+                            address.label || 'Unlabeled'
+                          }}</span>
+                          <div class="flex items-center gap-1.5">
+                            <span class="text-xs text-muted-foreground font-mono">{{
+                              formatAddress(address.address)
+                            }}</span>
+                            <button
+                              @click.stop="copyAddressToClipboard(address.address)"
+                              class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-accent rounded"
+                              :title="
+                                copiedAddress === address.address ? 'Copied!' : 'Copy address'
+                              "
+                            >
+                              <svg
+                                v-if="copiedAddress !== address.address"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-3.5 w-3.5 text-muted-foreground hover:text-foreground"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              >
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                              </svg>
+                              <svg
+                                v-else
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-3.5 w-3.5 text-green-500"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              >
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            </button>
+                          </div>
+                          <span class="text-xs text-muted-foreground"
+                            >Wallet: {{ address.wallet_name }}</span
+                          >
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <div class="flex items-center gap-1">
+                        <template
+                          v-for="chainId in getAddressChains(address).slice(0, 3)"
+                          :key="chainId"
+                        >
+                          <img
+                            v-if="getChainLogo(chainId) && !failedChainImages[chainId]"
+                            :src="getChainLogo(chainId)"
+                            :alt="chainId"
+                            :title="getChainName(chainId)"
+                            class="w-5 h-5 rounded-full object-cover border border-border"
+                            @error="failedChainImages[chainId] = true"
+                          />
+                          <div
+                            v-else
+                            class="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-[8px] font-semibold border border-purple-400"
+                            :title="getChainName(chainId)"
+                          >
+                            {{ getChainName(chainId).charAt(0).toUpperCase() }}
+                          </div>
+                        </template>
+                        <div
+                          v-if="getAddressChains(address).length > 3"
+                          class="w-5 h-5 rounded-full bg-muted hover:bg-accent flex items-center justify-center text-[9px] font-semibold text-muted-foreground border border-border cursor-pointer transition-colors"
+                          :title="`${getAddressChains(address).length - 3} more chains`"
+                        >
+                          +{{ getAddressChains(address).length - 3 }}
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <div class="flex gap-1 flex-wrap">
+                        <Badge
+                          v-for="tag in address.tags || []"
+                          :key="tag"
+                          variant="outline"
+                          class="border-primary/30 text-primary/80"
+                        >
+                          {{ tag }}
+                        </Badge>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <div class="flex items-center gap-1">
+                        <div
+                          v-for="token in getAddressWalletTokens(address).slice(0, 3)"
+                          :key="token.id"
+                          class="w-5 h-5"
+                        >
+                          <img
+                            v-if="
+                              token.logo_url && token.logo_url.length > 0 && !failedImages[token.id]
+                            "
+                            :src="token.logo_url"
+                            :alt="token.symbol"
+                            :title="token.symbol"
+                            class="w-5 h-5 rounded-full border object-cover"
+                            @error="handleImageError($event, token.id)"
+                          />
+                          <div
+                            v-else
+                            class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold border"
+                            :title="token.symbol"
+                          >
+                            {{ token.symbol.substring(0, 2) }}
+                          </div>
+                        </div>
+                        <span
+                          v-if="getAddressWalletTokens(address).length > 3"
+                          class="text-xs text-muted-foreground ml-1"
+                        >
+                          +{{ getAddressWalletTokens(address).length - 3 }}
+                        </span>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <div class="font-mono font-semibold text-primary">
+                        {{ currencySymbols[selectedCurrency]
+                        }}{{ formatValue(getAddressValue(address)) }}
+                      </div>
+                    </td>
+                    <td class="px-3 py-2.5">
+                      <div class="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          class="h-7 w-7"
+                          @click.stop="refreshAddress(address.id)"
+                          title="Refresh"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <polyline points="23 4 23 10 17 10" />
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                          </svg>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          class="h-7 w-7"
+                          @click.stop="editAddress(address)"
+                          title="Edit"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          class="h-7 w-7 text-destructive hover:text-destructive"
+                          @click.stop="confirmDeleteAddress(address)"
+                          title="Delete"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          >
+                            <polyline points="3 6 5 6 21 6" />
+                            <path
+                              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                            />
+                          </svg>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
                 </template>
               </template>
 
@@ -1438,6 +1721,9 @@ const statusFilter = ref('all')
 // Wallet sorting
 const sortBy = ref('value') // 'name' or 'value'
 
+// View mode: 'wallet' or 'address'
+const viewMode = ref<'wallet' | 'address'>('wallet')
+
 // Filter and sort wallets
 const filteredWallets = computed(() => {
   // First, filter wallets
@@ -1470,6 +1756,48 @@ const filteredWallets = computed(() => {
       // Sort by value (descending)
       const valueA = getTotalValueByWallet(a.id)
       const valueB = getTotalValueByWallet(b.id)
+      return valueB - valueA
+    }
+  })
+})
+
+// Flatten all addresses for address view mode
+const filteredAddresses = computed(() => {
+  // Create a map of wallet IDs that pass the filter
+  const walletIdSet = new Set(filteredWallets.value.map((w) => w.id))
+
+  // Filter addresses that belong to filtered wallets and add wallet info
+  let allAddresses = addresses.value
+    .filter((address) => walletIdSet.has(address.wallet_id))
+    .map((address) => {
+      // Find the wallet this address belongs to
+      const wallet = filteredWallets.value.find((w) => w.id === address.wallet_id)
+      return {
+        ...address,
+        wallet_name: wallet?.name || '',
+        wallet_id: address.wallet_id
+      }
+    })
+
+  // Apply hideSmallBalances filter
+  if (hideSmallBalances.value) {
+    allAddresses = allAddresses.filter((address) => {
+      const value = getAddressValue(address)
+      return value >= 10
+    })
+  }
+
+  // Sort addresses
+  return allAddresses.sort((a, b) => {
+    if (sortBy.value === 'name') {
+      // Sort by address label/address
+      const nameA = a.label || a.address
+      const nameB = b.label || b.address
+      return nameA.localeCompare(nameB)
+    } else {
+      // Sort by value (descending)
+      const valueA = getAddressValue(a)
+      const valueB = getAddressValue(b)
       return valueB - valueA
     }
   })
@@ -1892,7 +2220,7 @@ const getAddressWalletTokens = (address: Address) => {
   if (!address.tokens) return []
 
   // Filter tokens with non-zero balance
-  const nonZeroTokens = address.tokens.filter(token => {
+  const nonZeroTokens = address.tokens.filter((token) => {
     const amount = token.amount || 0
     const usdValue = token.usd_value || 0
     return amount > 0 || usdValue > 0
@@ -1900,7 +2228,7 @@ const getAddressWalletTokens = (address: Address) => {
 
   // Deduplicate by symbol - keep the one with highest USD value
   const tokenMap = new Map()
-  nonZeroTokens.forEach(token => {
+  nonZeroTokens.forEach((token) => {
     const symbol = token.symbol
     if (!tokenMap.has(symbol)) {
       tokenMap.set(symbol, token)
@@ -1914,9 +2242,7 @@ const getAddressWalletTokens = (address: Address) => {
   })
 
   // Sort by USD value descending
-  return Array.from(tokenMap.values()).sort((a, b) =>
-    (b.usd_value || 0) - (a.usd_value || 0)
-  )
+  return Array.from(tokenMap.values()).sort((a, b) => (b.usd_value || 0) - (a.usd_value || 0))
 }
 
 const getChainLogo = (chainId: string) => {
