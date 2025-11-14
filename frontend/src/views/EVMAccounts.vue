@@ -14,6 +14,15 @@
         </label>
       </div>
       <div class="flex items-center gap-3">
+        <Select v-model="sortBy">
+          <SelectTrigger class="w-[150px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="value">Sort by Value</SelectItem>
+            <SelectItem value="name">Sort by Name</SelectItem>
+          </SelectContent>
+        </Select>
         <Select v-model="statusFilter">
           <SelectTrigger class="w-[150px]">
             <SelectValue />
@@ -1353,9 +1362,13 @@ const hideSmallBalances = ref(false)
 // Wallet status filter
 const statusFilter = ref('all')
 
-// Filter wallets with small balances and status
+// Wallet sorting
+const sortBy = ref('value') // 'name' or 'value'
+
+// Filter and sort wallets
 const filteredWallets = computed(() => {
-  return wallets.value.filter((wallet) => {
+  // First, filter wallets
+  const filtered = wallets.value.filter((wallet) => {
     // Filter by status
     if (statusFilter.value !== 'all') {
       const walletStatus = wallet.status?.toLowerCase() || 'enabled'
@@ -1374,6 +1387,18 @@ const filteredWallets = computed(() => {
     }
 
     return true
+  })
+
+  // Then, sort wallets
+  return filtered.sort((a, b) => {
+    if (sortBy.value === 'name') {
+      return a.name.localeCompare(b.name)
+    } else {
+      // Sort by value (descending)
+      const valueA = getTotalValueByWallet(a.id)
+      const valueB = getTotalValueByWallet(b.id)
+      return valueB - valueA
+    }
   })
 })
 
