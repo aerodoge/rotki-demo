@@ -319,9 +319,48 @@
                               class="text-sm font-medium group-hover:text-primary transition-colors"
                               >{{ address.label || 'Unlabeled' }}</span
                             >
-                            <span class="text-xs text-muted-foreground font-mono">{{
-                              formatAddress(address.address)
-                            }}</span>
+                            <div class="flex items-center gap-1.5">
+                              <span class="text-xs text-muted-foreground font-mono">{{
+                                formatAddress(address.address)
+                              }}</span>
+                              <button
+                                @click.stop="copyAddressToClipboard(address.address)"
+                                class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-accent rounded"
+                                :title="
+                                  copiedAddress === address.address ? 'Copied!' : 'Copy address'
+                                "
+                              >
+                                <svg
+                                  v-if="copiedAddress !== address.address"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  class="h-3.5 w-3.5 text-muted-foreground hover:text-foreground"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                >
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                  <path
+                                    d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                                  />
+                                </svg>
+                                <svg
+                                  v-else
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  class="h-3.5 w-3.5 text-green-500"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                >
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -601,7 +640,7 @@
                                   Items {{ getStartIndex(address.id) }}-{{
                                     getEndIndex(address.id)
                                   }}
-                                  of {{ address.tokens.length }}
+                                  of {{ getFilteredTokensCount(address.id) }}
                                 </span>
                                 <Badge variant="secondary">
                                   Page {{ tokenPagination[address.id]?.currentPage || 1 }} of
@@ -1235,13 +1274,49 @@
         <form @submit.prevent="handleEditAddress" class="space-y-4 py-4">
           <div class="space-y-2">
             <Label for="edit-address-value">Address</Label>
-            <Input
-              id="edit-address-value"
-              v-model="editingAddress.address"
-              disabled
-              placeholder="0x..."
-              class="font-mono"
-            />
+            <div class="relative">
+              <Input
+                id="edit-address-value"
+                v-model="editingAddress.address"
+                disabled
+                placeholder="0x..."
+                class="font-mono pr-10"
+              />
+              <button
+                type="button"
+                @click="copyAddressToClipboard(editingAddress.address)"
+                class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-accent rounded transition-colors"
+                :title="copiedAddress === editingAddress.address ? 'Copied!' : 'Copy address'"
+              >
+                <svg
+                  v-if="copiedAddress !== editingAddress.address"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 text-muted-foreground hover:text-foreground"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <svg
+                  v-else
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 text-green-500"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </div>
           </div>
           <div class="space-y-2">
             <Label for="edit-address-label">Name</Label>
@@ -1406,6 +1481,7 @@ const showAddAddressModal = ref(false)
 const showEditAddressModal = ref(false)
 const editingWallet = ref<any>(null)
 const editingAddress = ref<any>(null)
+const copiedAddress = ref<string | null>(null)
 
 const newWallet = ref({
   name: '',
@@ -1474,7 +1550,14 @@ const getPaginatedTokens = (addressId: number) => {
   initPagination(addressId)
   const pagination = tokenPagination[addressId]
 
-  const sortedTokens = [...address.tokens].sort((a, b) => {
+  // Filter out tokens with zero balance
+  const filteredTokens = address.tokens.filter((token) => {
+    const amount = token.amount || 0
+    const usdValue = token.usd_value || 0
+    return amount > 0 || usdValue > 0
+  })
+
+  const sortedTokens = [...filteredTokens].sort((a, b) => {
     const usdValueA = a.usd_value || 0
     const usdValueB = b.usd_value || 0
     const rate = exchangeRates.value[selectedCurrency.value] || 1
@@ -1493,7 +1576,13 @@ const getTotalPages = (addressId: number) => {
   if (!address || !address.tokens) return 1
   initPagination(addressId)
   const pagination = tokenPagination[addressId]
-  return Math.ceil(address.tokens.length / pagination.pageSize)
+  // Filter out tokens with zero balance
+  const filteredCount = address.tokens.filter((token) => {
+    const amount = token.amount || 0
+    const usdValue = token.usd_value || 0
+    return amount > 0 || usdValue > 0
+  }).length
+  return Math.ceil(filteredCount / pagination.pageSize)
 }
 
 const getStartIndex = (addressId: number) => {
@@ -1510,7 +1599,13 @@ const getEndIndex = (addressId: number) => {
   initPagination(addressId)
   const pagination = tokenPagination[addressId]
   const end = pagination.currentPage * pagination.pageSize
-  return Math.min(end, address.tokens.length)
+  // Filter out tokens with zero balance
+  const filteredCount = address.tokens.filter((token) => {
+    const amount = token.amount || 0
+    const usdValue = token.usd_value || 0
+    return amount > 0 || usdValue > 0
+  }).length
+  return Math.min(end, filteredCount)
 }
 
 const isFirstPage = (addressId: number) => {
@@ -1552,13 +1647,30 @@ const onPageSizeChange = (addressId: number) => {
   tokenPagination[addressId].currentPage = 1
 }
 
+const getFilteredTokensCount = (addressId: number) => {
+  const address = addresses.value.find((a) => a.id === addressId)
+  if (!address || !address.tokens) return 0
+  return address.tokens.filter((token) => {
+    const amount = token.amount || 0
+    const usdValue = token.usd_value || 0
+    return amount > 0 || usdValue > 0
+  }).length
+}
+
 const getAddressChainGroups = (addressId: number) => {
   const address = addresses.value.find((a) => a.id === addressId)
   if (!address || !address.tokens) return []
 
   const chainMap = new Map()
 
-  address.tokens.forEach((token) => {
+  // Filter out tokens with zero balance
+  const filteredTokens = address.tokens.filter((token) => {
+    const amount = token.amount || 0
+    const usdValue = token.usd_value || 0
+    return amount > 0 || usdValue > 0
+  })
+
+  filteredTokens.forEach((token) => {
     if (!chainMap.has(token.chain_id)) {
       const chainInfo = availableChains.value.find((c) => c.id === token.chain_id)
       chainMap.set(token.chain_id, {
@@ -1980,6 +2092,19 @@ const deleteAddress = async (addressId: number) => {
 
 const openDeBank = (address: string) => {
   window.open(`https://debank.com/profile/${address}`, '_blank')
+}
+
+const copyAddressToClipboard = async (address: string) => {
+  try {
+    await navigator.clipboard.writeText(address)
+    copiedAddress.value = address
+    // Reset after 2 seconds
+    setTimeout(() => {
+      copiedAddress.value = null
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy address:', err)
+  }
 }
 
 const addNewWalletTag = () => {
