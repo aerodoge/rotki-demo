@@ -10,7 +10,7 @@
             v-model="hideSmallBalances"
             class="w-4 h-4 rounded border-gray-300 cursor-pointer"
           />
-          <span class="text-muted-foreground">隐藏小额 (&lt;10U)</span>
+          <span class="text-muted-foreground">Hide (&lt;$10)</span>
         </label>
       </div>
       <Button @click="refreshBalances" variant="outline" size="sm">

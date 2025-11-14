@@ -10,10 +10,20 @@
             v-model="hideSmallBalances"
             class="w-4 h-4 rounded border-gray-300 cursor-pointer"
           />
-          <span class="text-muted-foreground">隐藏小额 (&lt;10U)</span>
+          <span class="text-muted-foreground">Hide (&lt;$10)</span>
         </label>
       </div>
       <div class="flex items-center gap-3">
+        <Select v-model="statusFilter">
+          <SelectTrigger class="w-[150px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="enabled">Enabled</SelectItem>
+            <SelectItem value="disabled">Disabled</SelectItem>
+          </SelectContent>
+        </Select>
         <CurrencySelector />
       </div>
     </div>
@@ -970,6 +980,18 @@
               </div>
             </div>
           </div>
+          <div class="space-y-2">
+            <Label for="wallet-status">Status</Label>
+            <Select v-model="newWallet.status">
+              <SelectTrigger id="wallet-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Enabled">Enabled</SelectItem>
+                <SelectItem value="Disabled">Disabled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <DialogFooter>
             <Button type="button" variant="outline" @click="showAddWalletModal = false"
               >Cancel</Button
@@ -1086,6 +1108,18 @@
                 </Label>
               </div>
             </div>
+          </div>
+          <div class="space-y-2">
+            <Label for="edit-wallet-status">Status</Label>
+            <Select v-model="editingWallet.status">
+              <SelectTrigger id="edit-wallet-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Enabled">Enabled</SelectItem>
+                <SelectItem value="Disabled">Disabled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" @click="showEditWalletModal = false"
@@ -1313,19 +1347,33 @@ const addressChainPagination = reactive<Record<string, { currentPage: number; pa
   {}
 )
 
-// 隐藏小额资产
+// Hide small balances
 const hideSmallBalances = ref(false)
 
-// 过滤小额钱包
+// Wallet status filter
+const statusFilter = ref('all')
+
+// Filter wallets with small balances and status
 const filteredWallets = computed(() => {
-  if (!hideSmallBalances.value) {
-    return wallets.value
-  }
   return wallets.value.filter(wallet => {
-    // 计算钱包的USD总值
-    const addrs = getAddressesByWallet(wallet.id)
-    const totalUsdValue = addrs.reduce((sum, addr) => sum + getAddressValue(addr), 0)
-    return totalUsdValue >= 10
+    // Filter by status
+    if (statusFilter.value !== 'all') {
+      const walletStatus = wallet.status?.toLowerCase() || 'enabled'
+      if (walletStatus !== statusFilter.value) {
+        return false
+      }
+    }
+
+    // Filter by balance if hideSmallBalances is enabled
+    if (hideSmallBalances.value) {
+      const addrs = getAddressesByWallet(wallet.id)
+      const totalUsdValue = addrs.reduce((sum, addr) => sum + getAddressValue(addr), 0)
+      if (totalUsdValue < 10) {
+        return false
+      }
+    }
+
+    return true
   })
 })
 
@@ -1340,7 +1388,8 @@ const newWallet = ref({
   name: '',
   description: '',
   tags: [] as string[],
-  enabled_chains: [] as string[]
+  enabled_chains: [] as string[],
+  status: 'Enabled'
 })
 
 const newAddress = ref({
@@ -1637,7 +1686,10 @@ const getTotalValueByWallet = (walletId: number) => {
 }
 
 const getTotalValue = () => {
-  return walletStore.getTotalValue
+  // Calculate total value based on filtered wallets only
+  return filteredWallets.value.reduce((total, wallet) => {
+    return total + getTotalValueByWallet(wallet.id)
+  }, 0)
 }
 
 const getAddressValue = (address: Address) => {
@@ -1740,7 +1792,7 @@ const handleAddWallet = async () => {
   try {
     await walletStore.createWallet(newWallet.value)
     showAddWalletModal.value = false
-    newWallet.value = { name: '', description: '', tags: [], enabled_chains: [] }
+    newWallet.value = { name: '', description: '', tags: [], enabled_chains: [], status: 'Enabled' }
     newWalletTagInput.value = ''
   } catch (error: any) {
     alert('Failed to add wallet: ' + error.message)
@@ -1753,7 +1805,8 @@ const editWallet = (wallet: Wallet) => {
     name: wallet.name,
     description: wallet.description || '',
     tags: wallet.tags || [],
-    enabled_chains: wallet.enabled_chains || []
+    enabled_chains: wallet.enabled_chains || [],
+    status: wallet.status || 'Enabled'
   }
   editWalletTagInput.value = ''
   showEditWalletModal.value = true
@@ -1765,7 +1818,8 @@ const handleEditWallet = async () => {
       name: editingWallet.value.name,
       description: editingWallet.value.description,
       tags: editingWallet.value.tags,
-      enabled_chains: editingWallet.value.enabled_chains
+      enabled_chains: editingWallet.value.enabled_chains,
+      status: editingWallet.value.status
     })
     showEditWalletModal.value = false
     editingWallet.value = null

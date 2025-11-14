@@ -61,6 +61,7 @@ export interface Wallet {
   description?: string
   tags?: string[]
   enabled_chains?: string[]
+  status?: string
   addresses?: Address[]
   created_at?: string
   updated_at?: string
@@ -87,6 +88,7 @@ export interface CreateWalletRequest {
   description?: string
   tags?: string[]
   enabled_chains?: string[]
+  status?: string
 }
 
 export interface UpdateWalletRequest {
@@ -94,6 +96,7 @@ export interface UpdateWalletRequest {
   description?: string
   tags?: string[]
   enabled_chains?: string[]
+  status?: string
 }
 
 export interface CreateAddressRequest {
