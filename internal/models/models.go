@@ -35,8 +35,8 @@ type Wallet struct {
 	ID            uint        `gorm:"primaryKey" json:"id"`
 	Name          string      `gorm:"type:varchar(255);uniqueIndex;not null" json:"name"`
 	Description   string      `gorm:"type:text" json:"description"`
-	Tags          StringSlice `gorm:"type:json" json:"tags"`                              // 用户定义的标签
-	EnabledChains StringSlice `gorm:"type:json" json:"enabled_chains"`                    // 启用的链 ID 列表，空表示所有链
+	Tags          StringSlice `gorm:"type:json" json:"tags"`                                     // 用户定义的标签
+	EnabledChains StringSlice `gorm:"type:json" json:"enabled_chains"`                           // 启用的链 ID 列表，空表示所有链
 	Status        string      `gorm:"type:varchar(20);not null;default:'Enabled'" json:"status"` // Enabled 或 Disabled
 	Addresses     []Address   `gorm:"foreignKey:WalletID" json:"addresses,omitempty"`
 	CreatedAt     time.Time   `json:"created_at"`

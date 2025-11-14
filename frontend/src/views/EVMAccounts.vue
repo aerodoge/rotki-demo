@@ -79,7 +79,7 @@
                 <th
                   class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                 >
-                  Account
+                  WALLET
                 </th>
                 <th
                   class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
@@ -279,7 +279,7 @@
                     <th
                       class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
                     >
-                      Account
+                      WALLET
                     </th>
                     <th
                       class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase"
@@ -1355,7 +1355,7 @@ const statusFilter = ref('all')
 
 // Filter wallets with small balances and status
 const filteredWallets = computed(() => {
-  return wallets.value.filter(wallet => {
+  return wallets.value.filter((wallet) => {
     // Filter by status
     if (statusFilter.value !== 'all') {
       const walletStatus = wallet.status?.toLowerCase() || 'enabled'

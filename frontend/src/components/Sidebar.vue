@@ -16,14 +16,14 @@
         <span>Dashboard</span>
       </router-link>
 
-      <!-- Accounts Section -->
+      <!-- Wallets Section -->
       <div class="my-1">
         <div
           class="flex items-center justify-between px-5 py-3 mx-2 my-0.5 text-sm text-muted-foreground hover:text-foreground hover:bg-gradient-accent rounded-lg transition-all cursor-pointer group"
           @click="toggleAccounts"
         >
           <div class="flex items-center">
-            <span>Accounts</span>
+            <span>Wallets</span>
           </div>
           <span
             class="text-xs transform transition-transform"

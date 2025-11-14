@@ -164,7 +164,7 @@ const filteredChainBalances = computed(() => {
   if (!hideSmallBalances.value) {
     return chainBalances.value
   }
-  return chainBalances.value.filter(chain => chain.balance >= 10)
+  return chainBalances.value.filter((chain) => chain.balance >= 10)
 })
 
 // 以USD计算的总余额
