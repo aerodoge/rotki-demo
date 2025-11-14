@@ -16,7 +16,6 @@
       <div class="flex items-center gap-2">
         <!-- View Mode Toggle -->
         <div class="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md border">
-          <span class="text-xs font-medium text-muted-foreground">View:</span>
           <button
             @click="viewMode = 'wallet'"
             :class="[
