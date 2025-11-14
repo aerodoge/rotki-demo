@@ -1758,11 +1758,14 @@ const getWalletUniqueChains = (walletId: number) => {
     return wallet.enabled_chains
   }
 
-  // Otherwise fall back to chains with tokens
+  // Otherwise fall back to chains with tokens and protocols
   const addrs = getAddressesByWallet(walletId)
   const chains = new Set<string>()
   addrs.forEach((addr) => {
+    // Get chains from tokens
     addr.tokens?.forEach((token) => chains.add(token.chain_id))
+    // Get chains from protocols
+    addr.protocols?.forEach((protocol) => chains.add(protocol.chain_id))
   })
   return Array.from(chains)
 }
@@ -1785,7 +1788,10 @@ const getChainName = (chainId: string) => {
 
 const getAddressChains = (address: Address) => {
   const chains = new Set()
+  // Get chains from tokens
   address.tokens?.forEach((token) => chains.add(token.chain_id))
+  // Get chains from protocols
+  address.protocols?.forEach((protocol) => chains.add(protocol.chain_id))
   return Array.from(chains)
 }
 
